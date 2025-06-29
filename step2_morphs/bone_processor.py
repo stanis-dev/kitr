@@ -228,4 +228,4 @@ if __name__ == "__main__":
         results = process_azure_bones(input_fbx, input_fbx)
         print(json.dumps(results, indent=2))
     else:
-        print("❌ output-step2-azure.fbx not found. Run step2_morphs.py first.")
+        print("❌ Output file not found. Run azure_processor.py first.")

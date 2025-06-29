@@ -290,4 +290,4 @@ if __name__ == "__main__":
         results = validate_azure_clean_fbx(clean_fbx)
         print(f"\n📄 Validation results saved internally")
     else:
-        print("❌ Clean FBX file not found. Run cleanup_processor.py first.")
+        print("❌ Clean FBX file not found. Run azure_processor.py first.")

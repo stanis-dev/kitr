@@ -69,7 +69,7 @@ def check_prerequisites() -> bool:
     # Check step scripts exist
     required_scripts = [
         "step1_validation/validate.py",
-        "step2_morphs/step2_morphs.py"
+        "step2_morphs/azure_processor.py"
     ]
 
     for script in required_scripts:
@@ -108,8 +108,8 @@ def show_pipeline_summary():
     print("Input:  input-file.fbx (MetaHuman export)")
     print("├─ Step 1: FBX Validation")
     print("│   └─ Output: validation report only")
-    print("├─ Step 2: Azure Blendshape Mapping")
-    print("│   └─ Output: step2_morphs/output-step2-azure.fbx")
+    print("├─ Step 2: Azure FBX Optimization")
+    print("│   └─ Output: step2_morphs/azure_optimized.fbx")
     print("├─ Step 3: Cleanup [NOT IMPLEMENTED]")
     print("│   └─ Output: step3_cleanup/output-step3-cleaned.fbx")
     print("├─ Step 4: FBX to GLB Conversion [NOT IMPLEMENTED]")
@@ -133,7 +133,7 @@ def show_final_summary(steps_completed: int, total_time: float):
         print(f"📁 Input: {input_file.name} ({input_file.stat().st_size / (1024*1024):.1f}MB) - PRESERVED")
 
     output_files = [
-        "step2_morphs/output-step2-azure.fbx",
+        "step2_morphs/azure_optimized.fbx",
         "step3_cleanup/output-step3-cleaned.fbx",
         "step4_convert/output-step4-converted.glb",
         "step5_textures/output-step5-optimized.glb",
@@ -186,7 +186,7 @@ def main():
     # Define pipeline steps
     pipeline_steps = [
         ("Step 1", "step1_validation/validate.py", "FBX Validation & Azure Blendshape Check"),
-        ("Step 2", "step2_morphs/step2_morphs.py", "Azure Blendshape Mapping & Renaming"),
+        ("Step 2", "step2_morphs/azure_processor.py", "Azure FBX Optimization"),
         # Future steps will be added here as they're implemented
         # ("Step 3", "step3_cleanup.py", "Cleanup Unused Morphs & Skeleton"),
         # ("Step 4", "step4_convert.py", "FBX to GLB Conversion"),

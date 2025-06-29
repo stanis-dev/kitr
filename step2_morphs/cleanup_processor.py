@@ -272,4 +272,4 @@ if __name__ == "__main__":
         results = cleanup_azure_fbx(input_fbx, output_fbx)
         print(json.dumps(results, indent=2))
     else:
-        print("❌ Input file not found. Run step2_morphs.py first.")
+        print("❌ Input file not found. Run azure_processor.py first.")
