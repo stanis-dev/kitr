@@ -3,11 +3,8 @@
 # Core dependencies
 pygltflib>=1.16.0
 Pillow>=10.0.0
-FBX>=2020.3.4  # FBX SDK Python bindings
-
-# CLI and utilities
-click>=8.1.0
-rich>=13.0.0  # For beautiful console output
+rich>=13.0.0
+numpy>=1.24.0
 
 # Testing
 pytest>=7.4.0
