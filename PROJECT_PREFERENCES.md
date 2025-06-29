@@ -80,6 +80,8 @@ validate.py (main entry point)
 - **Fail-fast**: No fallbacks or graceful degradation
 - **Comprehensive logging**: Rich console output with step-by-step progress
 - **Snapshot testing**: Preserve exact behavior to prevent regression
+- **File immutability**: Each step produces a new output file, original input never modified
+- **Single entry point**: pipeline.py orchestrates all steps with comprehensive error handling
 
 **Next Steps (Steps 2-6)**:
 The remaining steps will build upon this foundation, maintaining the same design principles:
@@ -89,103 +91,144 @@ The remaining steps will build upon this foundation, maintaining the same design
 - Step 5: Texture resolution enforcement
 - Step 6: Final validation and Babylon.js compatibility
 
-Each subsequent step will follow the established patterns: Blender-based processing, fail-fast error handling, comprehensive logging, and snapshot test updates.
+Each subsequent step will follow the established patterns: Blender-based processing, fail-fast error handling, comprehensive logging, snapshot test updates, and file immutability.
 
-**REFACTORED PROJECT STRUCTURE - STEP ISOLATION**
+**FILE IMMUTABILITY REQUIREMENT - ADDED**
 
-To ensure complete isolation between steps and prevent any iteration from breaking existing work, the project structure has been refactored as follows:
+To ensure data integrity and enable rollback capabilities, each step in the pipeline must produce a new output file while preserving the original input:
+
+**Input File Protection**:
+- `input-file.fbx` must never be modified or overwritten by any step
+- Original input file serves as the canonical source for the entire pipeline
+- All steps read from input-file.fbx but write to step-specific output files
+
+**Step Output File Naming Convention**:
+- Step 1 (Validation): `input-file.fbx` → validation only, no output file
+- Step 2 (Morphs): `input-file.fbx` → `output-step2-azure.fbx`
+- Step 3 (Cleanup): `output-step2-azure.fbx` → `output-step3-cleaned.fbx`
+- Step 4 (Convert): `output-step3-cleaned.fbx` → `output-step4-converted.glb`
+- Step 5 (Textures): `output-step4-converted.glb` → `output-step5-optimized.glb`
+- Step 6 (Final): `output-step5-optimized.glb` → `output-final-avatar.glb`
+
+**File Immutability Benefits**:
+- **Debugging**: Each intermediate file can be inspected if issues arise
+- **Rollback**: Can restart pipeline from any intermediate step
+- **Safety**: Original MetaHuman export remains untouched as backup
+- **Traceability**: Clear audit trail of transformations at each step
+- **Parallel Development**: Multiple developers can work on different steps safely
+
+**Implementation Requirements**:
+- Each step must explicitly check that input file exists before processing
+- Each step must create new output file with step-specific naming
+- No step may modify files created by previous steps
+- Temporary files used during processing must be cleaned up after step completion
+- Each step entry point must validate input file integrity before proceeding
+
+**Storage Implications**:
+- Pipeline will generate ~6 files for complete processing (original + 5 outputs)
+- Each intermediate file preserves full model data until optimization steps
+- Disk space requirement: approximately 6x original file size during processing
+- Final cleanup can optionally remove intermediate files after successful completion
+
+This immutability principle ensures the pipeline is robust, debuggable, and safe for production use.
+
+**SINGLE ENTRY POINT ORCHESTRATION - ADDED**
+
+`pipeline.py` serves as the primary interface for the entire MetaHuman processing pipeline:
+
+**Pipeline Orchestration Features**:
+- Prerequisites validation (Blender availability, input file existence, required scripts)
+- Sequential step execution with comprehensive error handling
+- Real-time progress reporting with step timing
+- Final summary with complete file status and immutability confirmation
+- Early termination on any step failure (fail-fast principle)
+- Visual pipeline overview showing implemented vs planned steps
+
+**Usage Patterns**:
+- **Primary**: `python3 pipeline.py` (complete pipeline execution)
+- **Development**: Individual step scripts for testing/debugging
+- **Debugging**: All scripts remain independently executable for development workflow
+
+**Error Handling**:
+- Pre-flight checks prevent execution with missing prerequisites
+- Each step failure is captured with timing and exit code information
+- Pipeline stops immediately on first error (no recovery attempts)
+- Clear messaging about which step failed and how to fix issues
+
+**Output Management**:
+- Tracks all output files with size reporting
+- Confirms file immutability (original input preserved)
+- Shows which steps completed vs failed
+- Visual summary of pipeline execution results
+
+This single entry point maintains all established design principles while providing a streamlined user experience for complete pipeline execution.
+
+**REFACTORED PROJECT STRUCTURE - FLAT STEP ORGANIZATION**
+
+The project has been refactored to use a flat directory structure where each step is completely self-contained with its own logic, entry points, and output files:
 
 **Directory Structure**:
 ```
 kitr/
-├── input-file.fbx                    # Hardcoded input file
-├── validate.py                       # Step 1 entry point (LOCKED)
-├── step2_morphs.py                   # Step 2 entry point
-├── step3_cleanup.py                  # Step 3 entry point
-├── step4_convert.py                  # Step 4 entry point
-├── step5_textures.py                 # Step 5 entry point
-├── step6_final.py                    # Step 6 entry point
+├── input-file.fbx                    # Hardcoded input file (preserved)
+├── pipeline.py                       # Main entry point orchestrator
 ├── test_snapshot.py                  # Snapshot test (LOCKED)
 ├── requirements.txt                  # Dependencies
 ├── PROJECT_PREFERENCES.md            # This file
 ├── README.md                         # Documentation
 ├── .editorconfig                     # IDE settings
 ├── .vscode/                          # VSCode settings
-└── steps/                            # Step implementations
-    ├── step1_validation/             # LOCKED - Step 1 implementation
-    │   ├── __init__.py
-    │   ├── validation.py             # Core validation logic
-    │   ├── constants.py              # Azure blendshape definitions
-    │   └── logging_config.py         # Rich-based logging
-    ├── step2_morphs/                 # Step 2 implementation
-    │   ├── __init__.py
-    │   ├── morph_processor.py        # Morph target processing
-    │   └── azure_mapping.py          # Azure blendshape mapping
-    ├── step3_cleanup/                # Step 3 implementation
-    │   ├── __init__.py
-    │   ├── skeleton_optimizer.py     # Skeleton cleanup
-    │   └── morph_cleaner.py          # Remove unused morphs
-    ├── step4_convert/                # Step 4 implementation
-    │   ├── __init__.py
-    │   ├── fbx_converter.py          # FBX to GLB conversion
-    │   └── gltf_validator.py         # glTF validation
-    ├── step5_textures/               # Step 5 implementation
-    │   ├── __init__.py
-    │   ├── texture_resizer.py        # Texture downscaling
-    │   └── image_processor.py        # Image processing utilities
-    └── step6_final/                  # Step 6 implementation
-        ├── __init__.py
-        ├── babylon_validator.py      # Babylon.js compatibility
-        └── final_checker.py          # Final validation
+├── step1_validation/                 # Step 1 - Complete self-contained module
+│   ├── __init__.py
+│   ├── validate.py                   # Step 1 entry point
+│   ├── validation.py                 # Core validation logic
+│   ├── constants.py                  # Azure blendshape definitions + MetaHuman mappings
+│   └── logging_config.py             # Rich-based logging (shared by all steps)
+└── step2_morphs/                     # Step 2 - Complete self-contained module
+    ├── __init__.py
+    ├── step2_morphs.py               # Step 2 entry point
+    ├── morph_processor.py            # Azure blendshape mapping logic
+    └── output-step2-azure.fbx        # Step 2 output file
 ```
 
-**Isolation Principles**:
+**Future Step Structure Template**:
+```
+stepN_<name>/
+├── __init__.py
+├── stepN_<name>.py                   # Step entry point
+├── <step_logic>.py                   # Step-specific processing modules
+└── output-stepN-<description>.{fbx|glb}  # Step output file
+```
 
-1. **Step Independence**: Each step is completely self-contained in its own directory
-2. **No Cross-Step Dependencies**: Steps cannot import from other steps
-3. **Shared Resources**: Only the most essential shared components:
-   - `steps/step1_validation/logging_config.py` (shared logging)
-   - `steps/step1_validation/constants.py` (Azure definitions)
-4. **Entry Point Isolation**: Each step has its own entry point script
-5. **Locked Steps**: Completed steps are marked as LOCKED and cannot be modified
+**Flat Structure Benefits**:
 
-**Step Development Rules**:
+1. **Complete Step Isolation**: Each step directory contains everything needed for that step
+2. **Output File Co-location**: Output files live alongside the code that creates them
+3. **Clear Dependencies**: Only step1_validation provides shared utilities (logging, constants)
+4. **Simplified Navigation**: No deep nesting, easy to find step-related files
+5. **Self-Contained Development**: Each step can be developed/tested independently
 
-1. **Step 1 (LOCKED)**: Cannot be modified. All functionality preserved exactly as implemented.
-2. **Step 2+**: Can only import from:
-   - `steps/step1_validation/logging_config.py` (for logging)
-   - `steps/step1_validation/constants.py` (for Azure definitions)
-   - Standard Python libraries
-   - External dependencies (Blender, Rich, etc.)
+**Cross-Step Dependencies (Minimized)**:
+- **Shared Logging**: All steps import from `step1_validation.logging_config`
+- **Shared Constants**: All steps import Azure definitions from `step1_validation.constants`
+- **No Other Dependencies**: Steps cannot import from each other's logic modules
 
-3. **No Shared State**: Each step operates independently on the input file
-4. **Output Isolation**: Each step can produce its own output files without affecting others
-5. **Testing Isolation**: Each step can have its own tests without affecting others
+**Entry Point Resolution**:
+- **Pipeline Execution**: `python3 pipeline.py` (orchestrates all steps)
+- **Individual Steps**: Each step can be run independently from root directory
+- **Path Resolution**: Scripts work whether run from root or step directory
+- **Import Resolution**: Dynamic sys.path manipulation ensures imports work correctly
 
-**Migration from Current Structure**:
+**File Immutability with Co-location**:
+- Input: `input-file.fbx` (root level, preserved)
+- Step 1: Validation only (no output file)
+- Step 2: `step2_morphs/output-step2-azure.fbx`
+- Step 3: `step3_cleanup/output-step3-cleaned.fbx` (planned)
+- Step 4: `step4_convert/output-step4-converted.glb` (planned)
+- Step 5: `step5_textures/output-step5-optimized.glb` (planned)
+- Step 6: `step6_final/output-final-avatar.glb` (planned)
 
-The current `metahuman_converter/` directory will be moved to `steps/step1_validation/` and marked as LOCKED. The `validate.py` entry point will remain unchanged to preserve existing functionality.
-
-**Benefits of This Structure**:
-
-1. **Zero Regression Risk**: Modifying Step 2 cannot break Step 1
-2. **Parallel Development**: Multiple steps can be developed simultaneously
-3. **Clear Boundaries**: Each step's responsibilities are clearly defined
-4. **Easy Testing**: Each step can be tested in isolation
-5. **Incremental Deployment**: Steps can be deployed independently
-6. **Rollback Safety**: If a step breaks, only that step needs to be fixed
-
-**Step 2 Development Approach**:
-
-With this structure, Step 2 development will:
-1. Create `steps/step2_morphs/` directory
-2. Import only essential shared components from Step 1
-3. Implement morph target processing independently
-4. Create `step2_morphs.py` entry point
-5. Test in complete isolation
-6. Never touch Step 1 code
-
-This ensures that Step 1 remains completely stable while Step 2 can be iterated on freely.
+This structure maintains all established design principles while providing maximum organization and clarity for step development.
 
 Step 2: Generate/Map Azure Blendshape Set (55 Morph Targets)
 

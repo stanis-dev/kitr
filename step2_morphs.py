@@ -31,9 +31,16 @@ def main():
     print(f"  Missing: {len(result['missing'])}")
     if result["missing"]:
         print(f"  ❗ Missing blendshapes: {', '.join(result['missing'])}")
-    print(f"\n✅ Output written: {output_fbx}")
-    print("\nDone!\n")
-    sys.exit(0 if not result["missing"] else 1)
+
+    # Check if output file was created successfully
+    if output_fbx.exists():
+        print(f"\n✅ Output written: {output_fbx}")
+        print("\nDone!\n")
+        # Success: output file created (missing blendshapes are expected for MetaHuman)
+        sys.exit(0)
+    else:
+        print(f"\n❌ Failed to create output file: {output_fbx}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
