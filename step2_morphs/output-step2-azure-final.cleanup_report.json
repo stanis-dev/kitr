@@ -1,0 +1,16 @@
+{
+  "original_morphs": 823,
+  "removed_morphs": 771,
+  "kept_morphs": 52,
+  "original_bones": 2805,
+  "removed_bones": 0,
+  "kept_bones": 2805,
+  "processed_objects": [
+    {
+      "name": "Face.001",
+      "original_morphs": 823,
+      "kept_morphs": 52,
+      "removed_morphs": 771
+    }
+  ]
+}
