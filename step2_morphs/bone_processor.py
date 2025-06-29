@@ -139,27 +139,44 @@ def verify_azure_rotation_bones(bone_data: Dict[str, Any]) -> Dict[str, Any]:
         "verification_passed": False
     }
 
-    required_found = bone_data.get("required_bones_found", {})
+    all_bones = bone_data.get("bones", [])
 
-    # Analyze found bones for head
+    # Analyze found bones for head - broader search patterns
     head_candidates = []
-    for pattern in ["head", "Head", "HeadBone"]:
-        if pattern in required_found:
-            head_candidates.extend(required_found[pattern])
+    head_patterns = ["head", "Head", "HeadBone", "skull", "Skull"]
+    for bone_name in all_bones:
+        for pattern in head_patterns:
+            if pattern.lower() in bone_name.lower():
+                head_candidates.append(bone_name)
+                break
     verification["head_bones_found"] = list(set(head_candidates))
 
-    # Analyze found bones for left eye
+    # Analyze found bones for left eye - improved patterns for MetaHuman
     left_eye_candidates = []
-    for pattern in ["leftEye", "LeftEye", "left_eye"]:
-        if pattern in required_found:
-            left_eye_candidates.extend(required_found[pattern])
+    left_eye_patterns = [
+        "FACIAL_L_Eye",  # MetaHuman standard
+        "leftEye", "LeftEye", "left_eye", "L_Eye", "EyeL",
+        "eye_L", "Eye_L", "LeftEyeBone", "EyeBone_L"
+    ]
+    for bone_name in all_bones:
+        for pattern in left_eye_patterns:
+            if pattern in bone_name:  # Exact match for FACIAL_L_Eye
+                left_eye_candidates.append(bone_name)
+                break
     verification["left_eye_bones_found"] = list(set(left_eye_candidates))
 
-    # Analyze found bones for right eye
+    # Analyze found bones for right eye - improved patterns for MetaHuman
     right_eye_candidates = []
-    for pattern in ["rightEye", "RightEye", "right_eye"]:
-        if pattern in required_found:
-            right_eye_candidates.extend(required_found[pattern])
+    right_eye_patterns = [
+        "FACIAL_R_Eye",  # MetaHuman standard
+        "rightEye", "RightEye", "right_eye", "R_Eye", "EyeR",
+        "eye_R", "Eye_R", "RightEyeBone", "EyeBone_R"
+    ]
+    for bone_name in all_bones:
+        for pattern in right_eye_patterns:
+            if pattern in bone_name:  # Exact match for FACIAL_R_Eye
+                right_eye_candidates.append(bone_name)
+                break
     verification["right_eye_bones_found"] = list(set(right_eye_candidates))
 
     # Create suggested mapping for Azure rotations
@@ -179,8 +196,10 @@ def verify_azure_rotation_bones(bone_data: Dict[str, Any]) -> Dict[str, Any]:
     else:
         verification["missing_bones"].append("right eye bone for rightEyeRoll")
 
-    # Overall verification
+    # Overall verification - ALL 3 rotations must be available
     verification["verification_passed"] = len(verification["missing_bones"]) == 0
+    verification["rotations_available"] = len(verification["suggested_mapping"])
+    verification["all_rotations_found"] = verification["rotations_available"] == 3
 
     return verification
 
@@ -223,7 +242,7 @@ def process_azure_bones(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test with current output file
-    input_fbx = Path("output-step2-azure.fbx")
+    input_fbx = Path("azure_optimized.fbx")
     if input_fbx.exists():
         results = process_azure_bones(input_fbx, input_fbx)
         print(json.dumps(results, indent=2))

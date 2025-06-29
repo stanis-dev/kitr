@@ -70,22 +70,28 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
         print("🎭 STAGE 1: Azure Blendshape Mapping")
         print("-" * 40)
 
+        # Process blendshapes for Azure compatibility
         mapping_results = process_azure_blendshapes(input_fbx, mapped_fbx)
-        mapped_count = mapping_results.get("mapped_count", 0)
+
+        # Get mapped count from actual results
+        mapped_list = mapping_results.get("mapped", [])
+        mapped_count = len(mapped_list)
+        mapping_success = mapped_count == len(AZURE_BLENDSHAPES)
 
         print(f"✅ Blendshape mapping completed")
         print(f"   📊 {mapped_count}/{len(AZURE_BLENDSHAPES)} Azure blendshapes mapped")
 
+        if mapped_count < len(AZURE_BLENDSHAPES):
+            print(f"⚠️  Warning: Only {mapped_count}/{len(AZURE_BLENDSHAPES)} blendshapes mapped")
+
         results["stages"]["mapping"] = {
             "success": True,
-            "azure_blendshapes_mapped": mapped_count,
-            "azure_blendshapes_required": len(AZURE_BLENDSHAPES),
-            "mapping_complete": mapped_count == len(AZURE_BLENDSHAPES),
+            "mapped_count": mapped_count,
+            "required_count": len(AZURE_BLENDSHAPES),
+            "mapping_percentage": (mapped_count / len(AZURE_BLENDSHAPES)) * 100,
+            "mapping_complete": mapping_success,
             "results": mapping_results
         }
-
-        if mapped_count != len(AZURE_BLENDSHAPES):
-            print(f"⚠️  Warning: Only {mapped_count}/52 blendshapes mapped")
 
         print()
 
@@ -95,19 +101,60 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
         print("🦴 STAGE 2: Bone Structure Analysis")
         print("-" * 40)
 
+        # Process bones for Azure rotations
         bone_results = process_azure_bones(mapped_fbx, mapped_fbx)
-        verification = bone_results.get("azure_verification", {})
-        rotations_mapped = len([v for v in verification.get("suggested_mapping", {}).values() if v])
+        azure_verification = bone_results.get("azure_verification", {})
+        rotations_mapped = azure_verification.get("rotations_available", 0)
+        all_rotations_found = azure_verification.get("all_rotations_found", False)
 
-        print(f"✅ Bone analysis completed")
-        print(f"   📊 {rotations_mapped}/{len(AZURE_ROTATIONS)} Azure rotations available")
-        print(f"   🦴 {bone_results.get('total_bones_found', 0)} total bones analyzed")
+        print(f"✅ Bone processing completed")
+        print(f"   🦴 Bones analyzed: {bone_results.get('total_bones_found', 0)}")
+        print(f"   🔄 Azure rotations: {rotations_mapped}/3")
+
+        # CRITICAL: All 3 rotations must be found for Azure compatibility
+        if not all_rotations_found:
+            missing_bones = azure_verification.get("missing_bones", [])
+            print(f"   ❌ MISSING ROTATIONS: {missing_bones}")
+            print()
+            print("💥 PIPELINE FAILED:")
+            print("   ❌ All 3 Azure rotations are required for full compatibility")
+            print("   ❌ Missing rotation bones prevent Azure Cognitive Services integration")
+            print("   🔧 Bone structure insufficient for Azure requirements")
+
+            results["stages"]["bones"] = {
+                "success": False,
+                "rotations_found": rotations_mapped,
+                "rotations_required": len(AZURE_ROTATIONS),
+                "all_rotations_available": all_rotations_found,
+                "missing_bones": missing_bones,
+                "results": bone_results,
+                "failure_reason": "Insufficient rotation bones for Azure compatibility"
+            }
+
+            # Early failure - don't continue with cleanup/validation
+            results.update({
+                "success": False,
+                "status": "FAILED",
+                "error": f"Missing {3-rotations_mapped} required Azure rotation bones",
+                "azure_compatibility": {
+                    "blendshapes_mapped": mapped_count,
+                    "blendshapes_required": len(AZURE_BLENDSHAPES),
+                    "rotations_mapped": rotations_mapped,
+                    "rotations_required": len(AZURE_ROTATIONS),
+                    "compatibility_percentage": 0.0,
+                    "failure_reason": "Critical rotation bones missing"
+                }
+            })
+            return results
+
+        print(f"   ✅ All rotation bones found: {list(azure_verification.get('suggested_mapping', {}).keys())}")
 
         results["stages"]["bones"] = {
             "success": True,
-            "azure_rotations_mapped": rotations_mapped,
-            "azure_rotations_required": len(AZURE_ROTATIONS),
-            "rotations_complete": rotations_mapped == len(AZURE_ROTATIONS),
+            "rotations_found": rotations_mapped,
+            "rotations_required": len(AZURE_ROTATIONS),
+            "all_rotations_available": all_rotations_found,
+            "bone_mapping": azure_verification.get("suggested_mapping", {}),
             "results": bone_results
         }
 
@@ -176,7 +223,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 
         # Calculate overall success metrics
         blendshapes_perfect = mapped_count == len(AZURE_BLENDSHAPES)
-        rotations_available = rotations_mapped >= 1  # At least head rotation
+        rotations_available = rotations_mapped == len(AZURE_ROTATIONS)  # All 3 rotations required
         cleanup_successful = kept_morphs == len(AZURE_BLENDSHAPES)
         validation_clean = validation_passed
 
@@ -197,7 +244,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
             print("   ✅ Rotation support available")
             print("   ✅ File contains ONLY Azure content")
             print("   ✅ Ready for Azure Cognitive Services")
-        elif mapped_count >= 47 and rotations_mapped >= 1 and validation_clean:
+        elif mapped_count >= 47 and rotations_available and validation_clean:
             status = "EXCELLENT"
             print("\n✅ EXCELLENT AZURE COMPATIBILITY!")
             print("   ✅ High blendshape compatibility")
@@ -271,12 +318,17 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 def main():
     """Main execution function."""
 
-    # Use original input file
-    input_fbx = Path("../input-file.fbx")
+    # Use original input file - check both possible locations
+    input_fbx_root = Path("input-file.fbx")  # When run from project root
+    input_fbx_parent = Path("../input-file.fbx")  # When run from step2_morphs directory
 
-    if not input_fbx.exists():
+    if input_fbx_root.exists():
+        input_fbx = input_fbx_root
+    elif input_fbx_parent.exists():
+        input_fbx = input_fbx_parent
+    else:
         print("❌ Input file not found: input-file.fbx")
-        print("   Please ensure the MetaHuman FBX file exists")
+        print("   Please ensure the MetaHuman FBX file exists in the project root")
         return 1
 
     try:
