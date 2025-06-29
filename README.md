@@ -1,7 +1,23 @@
-# kitr
-Designing the FBX-to-GLB Avatar Pipeline (MetaHuman to Babylon.js)
+# 🎭 MetaHuman FBX to GLB Converter (kitr)
+Converting MetaHuman FBX files to optimized GLB format for Babylon.js with Azure viseme support.
 
-Overview
+## 🐳 Quick Start with Docker (Recommended)
+
+The easiest way to get started is using Docker, which includes all dependencies:
+
+```bash
+# Build and test the complete setup
+docker-compose build metahuman-converter
+./docker_test.sh
+
+# Validate your FBX file
+cp your-metahuman.fbx input/
+docker-compose run --rm metahuman-converter metahuman-convert validate input/your-metahuman.fbx
+```
+
+📖 **See [DOCKER_README.md](DOCKER_README.md) for complete Docker documentation and usage examples.**
+
+## Overview
 
 We need a robust CLI pipeline to convert a MetaHuman-exported avatar (FBX format, LOD0) into an optimized GLB ready for Babylon.js with Azure viseme blendshapes. The pipeline will validate the input FBX, standardize its facial blendshape targets to match Azure’s required 55 blendshapes (52 Apple ARKit facial shapes + 3 rotations) ￼ ￼, strip out unnecessary data for performance, convert to glTF/GLB, enforce texture resolution limits, and perform final validations. Each stage must be self-contained, with thorough logging and validation to catch issues early. An orchestrator function will coordinate these steps sequentially, ensuring that each step’s prerequisites are satisfied before moving on. We will use up-to-date tools (as of June 2025) and best practices for 3D asset optimization. The design also emphasizes iterative development – implementing one step at a time with tests – to avoid scope bloat and outdated assumptions.
 

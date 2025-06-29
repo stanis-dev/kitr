@@ -28,16 +28,16 @@ def main():
     print("Example 1: FBX Validation")
     print("=" * 60)
     
-    # Since we don't have a real FBX file, create a mock path
-    # In real usage, this would be the path to your MetaHuman FBX export
-    mock_fbx_path = Path("./sample_metahuman.fbx")
+    # Use the actual FBX file provided in the repository
+    # This is a real MetaHuman FBX export for testing
+    actual_fbx_path = Path("./input-file.fbx")
     
-    print(f"Validating FBX file: {mock_fbx_path}")
-    print("(Note: Using mock validation since no real FBX file is present)\n")
+    print(f"Validating FBX file: {actual_fbx_path}")
+    print("(Note: Using mock validation since FBX SDK is not available)\n")
     
     try:
         # Validate the FBX file
-        result = validate_fbx(mock_fbx_path)
+        result = validate_fbx(actual_fbx_path)
         
         # Display results
         print(f"\n📊 Validation Results:")
