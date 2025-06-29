@@ -5,6 +5,8 @@
   "original_bones": 2805,
   "removed_bones": 0,
   "kept_bones": 2805,
+  "collision_meshes_found": 1,
+  "collision_meshes_removed": 1,
   "processed_objects": [
     {
       "name": "Face.001",

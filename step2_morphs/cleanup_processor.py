@@ -51,10 +51,31 @@ cleanup_stats = {{
     "original_bones": 0,
     "removed_bones": 0,
     "kept_bones": 0,
+    "collision_meshes_found": 0,
+    "collision_meshes_removed": 0,
     "processed_objects": []
 }}
 
-# Process all mesh objects for morph target cleanup
+# First, identify and remove collision meshes
+collision_meshes_to_remove = []
+for obj in bpy.data.objects:
+    if obj.type == 'MESH':
+        # Check for collision mesh patterns (UCX, UBX, USP prefixes from Unreal Engine)
+        if obj.name.startswith(('UCX_', 'UBX_', 'USP_')) or 'collision' in obj.name.lower():
+            collision_meshes_to_remove.append(obj)
+            cleanup_stats["collision_meshes_found"] += 1
+            print(f"🔍 Found collision mesh: {{obj.name}}")
+
+# Remove collision meshes
+for obj in collision_meshes_to_remove:
+    print(f"🗑️  Removing collision mesh: {{obj.name}}")
+    bpy.data.objects.remove(obj, do_unlink=True)
+    cleanup_stats["collision_meshes_removed"] += 1
+
+print(f"✅ Collision mesh cleanup: {{cleanup_stats['collision_meshes_removed']}} removed")
+print()
+
+# Process remaining mesh objects for morph target cleanup
 for obj in bpy.data.objects:
     if obj.type == 'MESH' and obj.data.shape_keys:
         obj_stats = {{
@@ -112,6 +133,7 @@ for obj in bpy.data.objects:
 print(f"")
 print(f"📊 CLEANUP SUMMARY:")
 print(f"   Morph Targets: {{cleanup_stats['original_morphs']}} → {{cleanup_stats['kept_morphs']}} (removed {{cleanup_stats['removed_morphs']}})")
+print(f"   Collision Meshes: {{cleanup_stats['collision_meshes_found']}} found, {{cleanup_stats['collision_meshes_removed']}} removed")
 print(f"   Bones: {{cleanup_stats['original_bones']}} (kept all for skeleton integrity)")
 print(f"   Objects processed: {{len(cleanup_stats['processed_objects'])}}")
 
