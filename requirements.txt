@@ -1,0 +1,19 @@
+# FBX to GLB Avatar Pipeline Dependencies
+
+# Core dependencies
+pygltflib>=1.16.0
+Pillow>=10.0.0
+FBX>=2020.3.4  # FBX SDK Python bindings
+
+# CLI and utilities
+click>=8.1.0
+rich>=13.0.0  # For beautiful console output
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Development
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0

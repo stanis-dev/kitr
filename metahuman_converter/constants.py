@@ -1,0 +1,121 @@
+"""
+Constants for the MetaHuman converter pipeline.
+Contains the required Azure/ARKit blendshape names and other configuration.
+"""
+
+# Azure Cognitive Services expects these 52 ARKit-compatible facial blendshapes
+# plus 3 rotation parameters (headRoll, leftEyeRoll, rightEyeRoll)
+# Reference: Azure Cognitive Services documentation for 3D viseme output
+AZURE_BLENDSHAPES = [
+    # Eye blendshapes
+    "eyeBlinkLeft",
+    "eyeLookDownLeft", 
+    "eyeLookInLeft",
+    "eyeLookOutLeft",
+    "eyeLookUpLeft",
+    "eyeSquintLeft",
+    "eyeWideLeft",
+    "eyeBlinkRight",
+    "eyeLookDownRight",
+    "eyeLookInRight", 
+    "eyeLookOutRight",
+    "eyeLookUpRight",
+    "eyeSquintRight",
+    "eyeWideRight",
+    
+    # Jaw blendshapes
+    "jawForward",
+    "jawLeft",
+    "jawRight",
+    "jawOpen",
+    
+    # Mouth blendshapes
+    "mouthClose",
+    "mouthFunnel",
+    "mouthPucker",
+    "mouthLeft",
+    "mouthRight", 
+    "mouthSmileLeft",
+    "mouthSmileRight",
+    "mouthFrownLeft",
+    "mouthFrownRight",
+    "mouthDimpleLeft",
+    "mouthDimpleRight",
+    "mouthStretchLeft",
+    "mouthStretchRight",
+    "mouthRollLower",
+    "mouthRollUpper",
+    "mouthShrugLower",
+    "mouthShrugUpper",
+    "mouthPressLeft",
+    "mouthPressRight",
+    "mouthLowerDownLeft",
+    "mouthLowerDownRight", 
+    "mouthUpperUpLeft",
+    "mouthUpperUpRight",
+    
+    # Brow blendshapes
+    "browDownLeft",
+    "browDownRight",
+    "browInnerUp",
+    "browOuterUpLeft",
+    "browOuterUpRight",
+    
+    # Cheek blendshapes
+    "cheekPuff",
+    "cheekSquintLeft",
+    "cheekSquintRight",
+    
+    # Nose blendshapes
+    "noseSneerLeft",
+    "noseSneerRight",
+    
+    # Tongue blendshape
+    "tongueOut"
+]
+
+# The three rotation parameters that Azure outputs (indices 52-54)
+AZURE_ROTATIONS = [
+    "headRoll",      # Head tilt rotation
+    "leftEyeRoll",   # Left eye rotation  
+    "rightEyeRoll"   # Right eye rotation
+]
+
+# Total number of parameters Azure outputs: 52 blendshapes + 3 rotations = 55
+TOTAL_AZURE_PARAMETERS = len(AZURE_BLENDSHAPES) + len(AZURE_ROTATIONS)
+
+# MetaHuman naming variations that might need mapping
+METAHUMAN_NAME_MAPPINGS = {
+    # Common variations MetaHuman might use
+    "mouthSmile_L": "mouthSmileLeft",
+    "mouthSmile_R": "mouthSmileRight", 
+    "mouthFrown_L": "mouthFrownLeft",
+    "mouthFrown_R": "mouthFrownRight",
+    "eyeBlink_L": "eyeBlinkLeft",
+    "eyeBlink_R": "eyeBlinkRight",
+    # Add more mappings as needed when processing actual MetaHuman FBX files
+}
+
+# Required bones for head and eye rotations
+REQUIRED_BONES = [
+    "head",
+    "Head", 
+    "HeadBone",
+    "leftEye",
+    "LeftEye", 
+    "left_eye",
+    "rightEye",
+    "RightEye",
+    "right_eye"
+]
+
+# Maximum texture resolution (1024x1024)
+MAX_TEXTURE_RESOLUTION = 1024
+
+# FBX validation settings
+FBX_VALIDATION_CONFIG = {
+    "min_vertex_count": 1000,  # Minimum vertices for a valid head mesh
+    "max_vertex_count": 100000,  # Maximum vertices to prevent extremely heavy meshes
+    "required_uv_channels": 1,   # At least one UV channel required
+    "max_materials": 20          # Reasonable limit on material count
+}
