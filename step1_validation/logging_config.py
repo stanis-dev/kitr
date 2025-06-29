@@ -81,6 +81,52 @@ class ValidationLogger:
         """Log critical message."""
         self.logger.critical(message, **kwargs)
 
+    def step_start(self, step_name: str, description: str):
+        """Start a validation step."""
+        if self.console:
+            self.console.print(f"🔍 {step_name}: {description}")
+        else:
+            self.info(f"🔍 {step_name}: {description}")
+
+    def step_complete(self, step_name: str):
+        """Complete a validation step."""
+        if self.console:
+            self.console.print(f"✅ {step_name} completed")
+        else:
+            self.info(f"✅ {step_name} completed")
+
+    def validation_result(self, check_name: str, passed: bool, message: str = ""):
+        """Log a validation result."""
+        status = "✅" if passed else "❌"
+        full_message = f"{status} {check_name}"
+        if message:
+            full_message += f": {message}"
+
+        if self.console:
+            self.console.print(full_message)
+        else:
+            self.info(full_message)
+
+    def found_items(self, item_type: str, items: list, expected: int = None):
+        """Log found items count."""
+        count = len(items)
+        if expected:
+            message = f"📊 Found {count}/{expected} {item_type}"
+        else:
+            message = f"📊 Found {count} {item_type}"
+
+        if self.console:
+            self.console.print(message)
+        else:
+            self.info(message)
+
 
 # Global logger instance
 logger = ValidationLogger("validation")
+
+def setup_logging(level=None):
+    """Setup logging for backward compatibility"""
+    import logging
+    if level:
+        logging.basicConfig(level=level)
+    return logger

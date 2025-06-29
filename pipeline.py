@@ -10,7 +10,14 @@ import sys
 import subprocess
 import time
 from pathlib import Path
-from step1_validation.logging_config import setup_logging
+import logging
+
+def setup_logging():
+    """Setup basic logging for pipeline"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
 
 
 def run_step(step_name: str, script_path: str, description: str) -> bool:
@@ -69,7 +76,8 @@ def check_prerequisites() -> bool:
     # Check step scripts exist
     required_scripts = [
         "step1_validation/validate.py",
-        "step2_morphs/azure_processor.py"
+        "step2_morphs/azure_processor.py",
+        "step3_glb/simple_converter.py"
     ]
 
     for script in required_scripts:
@@ -109,11 +117,11 @@ def show_pipeline_summary():
     print("├─ Step 1: FBX Validation")
     print("│   └─ Output: validation report only")
     print("├─ Step 2: Azure FBX Optimization")
-    print("│   └─ Output: step2_morphs/azure_optimized.fbx")
-    print("├─ Step 3: Cleanup [NOT IMPLEMENTED]")
-    print("│   └─ Output: step3_cleanup/output-step3-cleaned.fbx")
-    print("├─ Step 4: FBX to GLB Conversion [NOT IMPLEMENTED]")
-    print("│   └─ Output: step4_convert/output-step4-converted.glb")
+    print("│   └─ Output: azure_optimized.fbx")
+    print("├─ Step 3: FBX to GLB Conversion")
+    print("│   └─ Output: step3_glb/azure_optimized_web.glb")
+    print("├─ Step 4: GLB Optimization [NOT IMPLEMENTED]")
+    print("│   └─ Output: step4_optimize/optimized.glb")
     print("├─ Step 5: Texture Optimization [NOT IMPLEMENTED]")
     print("│   └─ Output: step5_textures/output-step5-optimized.glb")
     print("└─ Step 6: Final Validation [NOT IMPLEMENTED]")
@@ -133,9 +141,9 @@ def show_final_summary(steps_completed: int, total_time: float):
         print(f"📁 Input: {input_file.name} ({input_file.stat().st_size / (1024*1024):.1f}MB) - PRESERVED")
 
     output_files = [
-        "step2_morphs/azure_optimized.fbx",
-        "step3_cleanup/output-step3-cleaned.fbx",
-        "step4_convert/output-step4-converted.glb",
+        "azure_optimized.fbx",
+        "step3_glb/azure_optimized_web.glb",
+        "step4_optimize/optimized.glb",
         "step5_textures/output-step5-optimized.glb",
         "step6_final/output-final-avatar.glb"
     ]
@@ -151,9 +159,9 @@ def show_final_summary(steps_completed: int, total_time: float):
     print(f"\n⏱️  Total execution time: {total_time:.1f}s")
     print(f"📊 Steps completed: {steps_completed}/6")
 
-    if steps_completed == 2:  # Only implemented steps
+    if steps_completed == 3:  # All currently implemented steps
         print("✅ All implemented steps completed successfully!")
-    elif steps_completed < 2:
+    elif steps_completed < 3:
         print("❌ Pipeline failed - not all steps completed")
 
     print("\n🔒 File immutability maintained - original input preserved")
@@ -187,11 +195,11 @@ def main():
     pipeline_steps = [
         ("Step 1", "step1_validation/validate.py", "FBX Validation & Azure Blendshape Check"),
         ("Step 2", "step2_morphs/azure_processor.py", "Azure FBX Optimization"),
+        ("Step 3", "step3_glb/simple_converter.py", "FBX to GLB Conversion"),
         # Future steps will be added here as they're implemented
-        # ("Step 3", "step3_cleanup.py", "Cleanup Unused Morphs & Skeleton"),
-        # ("Step 4", "step4_convert.py", "FBX to GLB Conversion"),
+        # ("Step 4", "step4_optimize.py", "GLB Optimization & Compression"),
         # ("Step 5", "step5_textures.py", "Texture Resolution Optimization"),
-        # ("Step 6", "step6_final.py", "Final Validation & Babylon.js Compatibility"),
+        # ("Step 6", "step6_final.py", "Final Validation & Browser Compatibility"),
     ]
 
     # Execute each step
