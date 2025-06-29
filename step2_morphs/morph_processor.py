@@ -1,3 +1,9 @@
+"""
+Azure Blendshape Processing Module.
+
+Handles mapping and renaming of MetaHuman morph targets to Azure blendshapes.
+"""
+
 import subprocess
 import json
 import sys
@@ -14,7 +20,12 @@ from step1_validation.logging_config import logger
 def extract_all_blendshapes(input_fbx: Path) -> list[str]:
     """
     Extract all blendshape (shape key) names from the input FBX using Blender.
-    Returns a list of all blendshape names found.
+
+    Args:
+        input_fbx: Path to input FBX file
+
+    Returns:
+        List of all blendshape names found in the FBX
     """
     output_json = input_fbx.with_suffix(".blendshapes.json")
     blender_script = f"""
@@ -49,8 +60,14 @@ with open(output_json, "w") as f:
 
 def process_azure_blendshapes(input_fbx: Path, output_fbx: Path) -> dict[str, Any]:
     """
-    Loads input_fbx, ensures all Azure blendshapes are present and named correctly, writes output_fbx.
-    Returns a dict with mapping summary.
+    Process MetaHuman FBX to ensure all Azure blendshapes are present and correctly named.
+
+    Args:
+        input_fbx: Path to input MetaHuman FBX file
+        output_fbx: Path to output Azure-compatible FBX file
+
+    Returns:
+        Dictionary containing mapping results and statistics
     """
     azure_blendshapes = list(AZURE_BLENDSHAPES)
     mapping_json = output_fbx.with_suffix(".mapping.json")
@@ -110,7 +127,7 @@ with open(mapping_json, "w") as f:
 bpy.ops.export_scene.fbx(filepath=output_fbx, use_selection=False)
 """
 
-    # Run Blender
+    # Run Blender processing
     try:
         subprocess.run(
             ["blender", "--background", "--python-expr", blender_script],
@@ -119,12 +136,12 @@ bpy.ops.export_scene.fbx(filepath=output_fbx, use_selection=False)
             timeout=120,
             check=True,
         )
-        logger.console.print("[green]Blender run completed for Step 2[/green]")
+        logger.console.print("[green]Blender processing completed[/green]")
     except Exception as e:
-        logger.console.print(f"[red]Blender run failed: {e}[/red]")
+        logger.console.print(f"[red]Blender processing failed: {e}[/red]")
         raise
 
-    # Read mapping info
+    # Read and return mapping results
     if not mapping_json.exists():
         raise RuntimeError(f"Blender did not produce mapping info: {mapping_json}")
     with open(mapping_json, "r") as f:

@@ -1,35 +1,40 @@
 #!/usr/bin/env python3
 """
-Bone Processor for Azure Rotation Parameters
+Azure Bone Processing Module.
 
-This module handles the skeleton/bone structure needed for Azure's 3 rotation parameters:
-- headRoll (head tilt rotation)
-- leftEyeRoll (left eye rotation)
-- rightEyeRoll (right eye rotation)
+Handles bone structure analysis and verification for Azure rotation compatibility.
 """
 
 import subprocess
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import REQUIRED_BONES, AZURE_ROTATIONS
-from step1_validation.logging_config import logger
+from step1_validation.constants import AZURE_ROTATIONS
 
 
 def extract_bone_structure(input_fbx: Path) -> Dict[str, Any]:
     """
-    Extract bone/armature structure from FBX using Blender.
-    Returns information about bones, their hierarchy, and naming.
+    Extract complete bone structure from FBX file using Blender.
+
+    Args:
+        input_fbx: Path to input FBX file
+
+    Returns:
+        Dictionary containing bone structure data
     """
     output_json = input_fbx.with_suffix(".bones.json")
 
-    # Prepare required bones list for Blender script
-    required_bones_list = json.dumps(REQUIRED_BONES)
+    # Required bone patterns for Azure rotations
+    required_bones_list = [
+        "head", "Head", "HeadBone", "skull", "Skull",
+        "FACIAL_L_Eye", "leftEye", "LeftEye", "left_eye", "L_Eye", "EyeL",
+        "FACIAL_R_Eye", "rightEye", "RightEye", "right_eye", "R_Eye", "EyeR"
+    ]
 
     blender_script = f"""
 import bpy
@@ -100,7 +105,7 @@ with open(output_json, "w") as f:
     json.dump(bone_data, f, indent=2)
 """
 
-    # Run Blender
+    # Run Blender processing
     try:
         subprocess.run(
             ["blender", "--background", "--python-expr", blender_script],
@@ -128,7 +133,12 @@ with open(output_json, "w") as f:
 def verify_azure_rotation_bones(bone_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Verify that the required bones for Azure rotations are present.
-    Returns verification results and suggestions for bone mapping.
+
+    Args:
+        bone_data: Bone structure data from extract_bone_structure()
+
+    Returns:
+        Dictionary containing verification results and bone mapping suggestions
     """
     verification: Dict[str, Any] = {
         "head_bones_found": [],
@@ -181,7 +191,6 @@ def verify_azure_rotation_bones(bone_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Create suggested mapping for Azure rotations
     if verification["head_bones_found"]:
-        # Use the first/best head bone candidate
         verification["suggested_mapping"]["headRoll"] = verification["head_bones_found"][0]
     else:
         verification["missing_bones"].append("head bone for headRoll")
@@ -207,7 +216,13 @@ def verify_azure_rotation_bones(bone_data: Dict[str, Any]) -> Dict[str, Any]:
 def process_azure_bones(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
     """
     Process and verify bones for Azure rotation compatibility.
-    Ensures the output FBX has properly identified bones for the 3 Azure rotations.
+
+    Args:
+        input_fbx: Path to input FBX file
+        output_fbx: Path to output FBX file
+
+    Returns:
+        Dictionary containing bone processing results and Azure verification
     """
     print("🔍 Processing bones for Azure rotations...")
 
@@ -217,10 +232,8 @@ def process_azure_bones(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
     # Verify Azure rotation requirements
     verification = verify_azure_rotation_bones(bone_data)
 
-    # If input and output are different, we need to process the FBX
+    # If input and output are different, copy the file (bone structure preserved)
     if input_fbx != output_fbx:
-        # For now, just copy the file since we're not modifying bone structure
-        # In future iterations, we might rename bones here
         import shutil
         if output_fbx.exists():
             print("⚠️  Output FBX already exists, using existing file")

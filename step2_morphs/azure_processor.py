@@ -1,57 +1,48 @@
 #!/usr/bin/env python3
 """
-Step 2 Final: Complete Azure FBX Processing Pipeline
+Azure FBX Processor - MetaHuman to Azure Cognitive Services optimization.
 
-This is the definitive Step 2 processor that performs all required operations:
-1. Azure blendshape mapping and renaming
-2. Bone structure analysis for rotations
-3. Morph target cleanup (removes excess morphs)
-4. Final validation (ensures only Azure content)
-
-Output: Clean, optimized FBX with ONLY Azure-required content (52 blendshapes + essential bones)
+This module provides complete processing of MetaHuman FBX files for Azure compatibility,
+including blendshape mapping, bone analysis, cleanup, and validation.
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 from typing import Dict, Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step2_morphs.morph_processor import process_azure_blendshapes
-from step2_morphs.bone_processor import process_azure_bones
-from step2_morphs.cleanup_processor import cleanup_azure_fbx
-from step2_morphs.validate_clean_fbx import validate_azure_clean_fbx
 from step1_validation.constants import AZURE_BLENDSHAPES, AZURE_ROTATIONS
+from morph_processor import process_azure_blendshapes
+from bone_processor import process_azure_bones
+from cleanup_processor import cleanup_azure_fbx
+from validate_clean_fbx import validate_azure_clean_fbx
 
 
-def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
+def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:
     """
-    Complete Step 2 processing pipeline for Azure compatibility.
+    Complete Azure FBX optimization process.
 
-    Workflow:
-    1. Map and rename blendshapes to Azure format
-    2. Analyze bone structure for rotation support
-    3. Clean up excess morph targets (keep only 52 Azure blendshapes)
-    4. Validate final output contains only Azure-required content
+    Performs:
+    1. Azure blendshape mapping
+    2. Bone structure analysis
+    3. Morph target cleanup
+    4. Final validation
 
-    Returns comprehensive results and file paths.
+    Args:
+        input_fbx: Path to input MetaHuman FBX file
+
+    Returns:
+        Dict containing processing results and status
     """
-
-    print("🚀 STEP 2 FINAL: COMPLETE AZURE FBX PROCESSING")
+    print("🚀 AZURE FBX OPTIMIZATION")
     print("=" * 60)
-    print(f"📁 Input: {input_fbx}")
+    print(f"📁 Input: {input_fbx.name}")
     print()
 
-    if not input_fbx.exists():
-        return {
-            "success": False,
-            "error": f"Input file not found: {input_fbx}",
-            "stage": "initialization"
-        }
-
-    # Define intermediate and final output files
+    # Output file paths
     mapped_fbx = Path("output-step2-azure-mapped.fbx")
     clean_fbx = Path("azure_optimized.fbx")
 
@@ -64,9 +55,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
     }
 
     try:
-        # ============================================
-        # STAGE 1: Azure Blendshape Mapping
-        # ============================================
+        # Stage 1: Azure Blendshape Mapping
         print("🎭 STAGE 1: Azure Blendshape Mapping")
         print("-" * 40)
 
@@ -95,9 +84,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 
         print()
 
-        # ============================================
-        # STAGE 2: Bone Structure Analysis
-        # ============================================
+        # Stage 2: Bone Structure Analysis
         print("🦴 STAGE 2: Bone Structure Analysis")
         print("-" * 40)
 
@@ -111,12 +98,12 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
         print(f"   🦴 Bones analyzed: {bone_results.get('total_bones_found', 0)}")
         print(f"   🔄 Azure rotations: {rotations_mapped}/3")
 
-        # CRITICAL: All 3 rotations must be found for Azure compatibility
+        # All 3 rotations must be found for Azure compatibility
         if not all_rotations_found:
             missing_bones = azure_verification.get("missing_bones", [])
             print(f"   ❌ MISSING ROTATIONS: {missing_bones}")
             print()
-            print("💥 PIPELINE FAILED:")
+            print("💥 PROCESSING FAILED:")
             print("   ❌ All 3 Azure rotations are required for full compatibility")
             print("   ❌ Missing rotation bones prevent Azure Cognitive Services integration")
             print("   🔧 Bone structure insufficient for Azure requirements")
@@ -160,9 +147,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 
         print()
 
-        # ============================================
-        # STAGE 3: Morph Target Cleanup
-        # ============================================
+        # Stage 3: Morph Target Cleanup
         print("🧹 STAGE 3: Morph Target Cleanup")
         print("-" * 40)
 
@@ -187,9 +172,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 
         print()
 
-        # ============================================
-        # STAGE 4: Final Validation
-        # ============================================
+        # Stage 4: Final Validation
         print("🔍 STAGE 4: Final Validation")
         print("-" * 40)
 
@@ -215,9 +198,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
 
         print()
 
-        # ============================================
-        # FINAL ASSESSMENT
-        # ============================================
+        # Final Assessment
         print("📊 FINAL ASSESSMENT:")
         print("=" * 50)
 
@@ -294,13 +275,7 @@ def process_step2_complete(input_fbx: Path) -> Dict[str, Any]:
             }
         })
 
-        # Save comprehensive report
-        report_file = Path("processing_report.json")
-        with open(report_file, "w") as f:
-            json.dump(results, f, indent=2)
-
-        print(f"\n📄 Complete report: {report_file.name}")
-        print(f"🎯 Status: {status}")
+        print(f"\n🎯 Status: {status}")
         print(f"🚀 Azure Compatibility: {compatibility_score:.1f}%")
 
         return results
@@ -332,14 +307,14 @@ def main():
         return 1
 
     try:
-        # Run complete Step 2 processing
-        results = process_step2_complete(input_fbx)
+        # Run complete Azure optimization
+        results = process_azure_optimization(input_fbx)
 
         if results["success"]:
             status = results["status"]
             compatibility = results["azure_compatibility"]["compatibility_percentage"]
 
-            print(f"\n🎯 STEP 2 COMPLETE!")
+            print(f"\n🎯 AZURE OPTIMIZATION COMPLETE!")
             print(f"   Status: {status}")
             print(f"   Azure Compatibility: {compatibility:.1f}%")
 
@@ -350,7 +325,7 @@ def main():
                 print(f"   ⚠️  Additional optimization recommended")
                 return 0
         else:
-            print(f"\n❌ Step 2 failed: {results.get('error', 'Unknown error')}")
+            print(f"\n❌ Azure optimization failed: {results.get('error', 'Unknown error')}")
             return 1
 
     except Exception as e:
