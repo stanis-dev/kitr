@@ -1,4 +1,7 @@
-# MetaHuman FBX Validator Dependencies
+# MetaHuman FBX Validator - REQUIRED Dependencies
+#
+# ALL dependencies are REQUIRED - no fallbacks or alternatives
+# Tool will crash immediately if any dependency is missing
 
-# Required for console output and logging
+# Rich console library - REQUIRED (no fallback console implementation)
 rich>=13.0.0
