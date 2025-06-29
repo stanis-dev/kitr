@@ -1,0 +1,12 @@
+# Core dependencies for MetaHuman FBX to GLB conversion pipeline
+pygltflib>=1.16.0  # For glTF manipulation
+Pillow>=10.0.0     # For texture processing
+numpy>=1.24.0      # For numerical operations
+click>=8.1.0       # For CLI interface
+pydantic>=2.0.0    # For data validation
+pytest>=7.0.0      # For testing
+pytest-cov>=4.0.0  # For test coverage
+
+# Future FBX processing dependencies (to be uncommented when needed)
+# FBX-SDK-Python>=2020.3.4  # Official Autodesk FBX SDK (if available)
+# fbx>=2020.3.4              # Alternative FBX library
