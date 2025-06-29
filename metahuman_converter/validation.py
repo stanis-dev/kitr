@@ -8,6 +8,7 @@ import os
 import subprocess
 import json
 import tempfile
+import shutil
 from pathlib import Path
 from typing import List, Dict, Set
 from dataclasses import dataclass, field
@@ -35,6 +36,30 @@ class FBXValidationResult:
         self.warnings.append(warning)
 
 
+def validate_blender_installation():
+    """Validate that Blender is properly installed and accessible."""
+    if not shutil.which("blender"):
+        raise RuntimeError("Blender is not installed or not in PATH. Please install Blender and ensure it's accessible from command line.")
+    
+    # Test Blender version and basic functionality
+    try:
+        result = subprocess.run(
+            ["blender", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Blender version check failed: {result.stderr}")
+        
+        logger.validation_result("Blender installation", True, f"Found Blender: {result.stdout.split()[1]}")
+        
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Blender version check timed out")
+    except Exception as e:
+        raise RuntimeError(f"Blender validation failed: {e}")
+
+
 def validate_fbx(fbx_path: Path) -> FBXValidationResult:
     """
     Validate FBX file for MetaHuman compatibility using Blender.
@@ -44,7 +69,10 @@ def validate_fbx(fbx_path: Path) -> FBXValidationResult:
     
     logger.step_start("FBX Validation", f"Validating MetaHuman FBX: {fbx_path.name}")
     
-    # Step 1: Basic file checks
+    # Step 1: Validate Blender installation
+    validate_blender_installation()
+    
+    # Step 2: Basic file checks
     if not fbx_path.exists():
         result.add_error(f"File not found: {fbx_path}")
         return result
@@ -53,10 +81,10 @@ def validate_fbx(fbx_path: Path) -> FBXValidationResult:
     file_size_mb = fbx_path.stat().st_size / (1024 * 1024)
     logger.console.print(f"  Size: {file_size_mb:.1f}MB")
     
-    # Step 2: Blender validation
+    # Step 3: Blender validation
     _process_with_blender(fbx_path, result)
     
-    # Step 3: Final validation
+    # Step 4: Final validation
     if len(result.found_blendshapes) >= 52:
         logger.validation_result("Blendshape count", True, f"Found {len(result.found_blendshapes)}/52")
         if not result.errors:
@@ -104,7 +132,6 @@ def _process_with_blender(fbx_path: Path, result: FBXValidationResult):
         capture_output=True,
         text=True,
         timeout=60,  # 1 minute timeout
-        env=dict(os.environ, DISPLAY=":0"),
         check=True  # Raises CalledProcessError if returncode != 0
     )
     
