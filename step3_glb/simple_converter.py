@@ -197,28 +197,56 @@ try:
 
 {materials_search_code}
 
-    # Apply materials to remaining meshes by name matching
+        # Apply materials to remaining meshes by name matching
+    material_report = {{
+        "meshes_processed": 0,
+        "materials_applied": 0,
+        "missing_materials": [],
+        "available_materials": [],
+        "suggestions": []
+    }}
+
+    # Get list of available materials
+    available_materials = [mat.name for mat in bpy.data.materials]
+    material_report["available_materials"] = available_materials
+
     if remaining_meshes:
         print("🔗 Applying materials to remaining meshes...")
+        material_report["meshes_processed"] = len(remaining_meshes)
+
         for obj in remaining_meshes:
             mesh_name = obj.name.lower()
             print(f"  🔍 Processing mesh: {{obj.name}}")
 
             # Try to match mesh name to material
             best_material = None
+            matched_category = None
+
             for mat in bpy.data.materials:
                 mat_name = mat.name.lower()
                 if 'face' in mesh_name and 'face' in mat_name:
                     best_material = mat
+                    matched_category = "face"
                     break
                 elif 'body' in mesh_name and 'body' in mat_name:
                     best_material = mat
+                    matched_category = "body"
                     break
                 elif 'hair' in mesh_name and 'hair' in mat_name:
                     best_material = mat
+                    matched_category = "hair"
                     break
                 elif 'pelo' in mesh_name and 'hair' in mat_name:  # Spanish for hair
                     best_material = mat
+                    matched_category = "hair"
+                    break
+                elif 'feet' in mesh_name and 'feet' in mat_name:
+                    best_material = mat
+                    matched_category = "feet"
+                    break
+                elif 'foot' in mesh_name and 'foot' in mat_name:
+                    best_material = mat
+                    matched_category = "foot"
                     break
 
             if best_material:
@@ -226,8 +254,79 @@ try:
                 obj.data.materials.clear()
                 obj.data.materials.append(best_material)
                 print(f"    ✅ Applied material: {{best_material.name}}")
+                material_report["materials_applied"] += 1
             else:
                 print(f"    ⚠️  No matching material found for {{obj.name}}")
+
+                # Determine what material category this mesh needs
+                suggested_folder = None
+                if 'face' in mesh_name:
+                    suggested_folder = "Face"
+                elif 'body' in mesh_name:
+                    suggested_folder = "Body"
+                elif 'hair' in mesh_name or 'pelo' in mesh_name:
+                    suggested_folder = "Hair"
+                elif 'feet' in mesh_name or 'foot' in mesh_name:
+                    suggested_folder = "Feet"
+                elif 'hand' in mesh_name:
+                    suggested_folder = "Hands"
+                elif 'eye' in mesh_name:
+                    suggested_folder = "Eyes"
+                else:
+                    suggested_folder = f"{{obj.name.split('_')[0].title()}}"  # Use first part of mesh name
+
+                missing_info = {{
+                    "mesh_name": obj.name,
+                    "suggested_folder": suggested_folder,
+                    "mesh_category": mesh_name
+                }}
+                material_report["missing_materials"].append(missing_info)
+
+        print()
+
+        # Generate material report
+        print("📋 MATERIAL APPLICATION REPORT:")
+        print("=" * 40)
+        print(f"📊 Meshes processed: {{material_report['meshes_processed']}}")
+        print(f"✅ Materials applied: {{material_report['materials_applied']}}")
+        print(f"❌ Missing materials: {{len(material_report['missing_materials'])}}")
+        print()
+
+        if material_report["available_materials"]:
+            print("🎭 Available materials:")
+            for mat in material_report["available_materials"]:
+                print(f"   ✅ {{mat}}")
+            print()
+
+        if material_report["missing_materials"]:
+            print("⚠️  MISSING MATERIALS ANALYSIS:")
+            print("-" * 30)
+            for missing in material_report["missing_materials"]:
+                mesh_name = missing["mesh_name"]
+                suggested_folder = missing["suggested_folder"]
+                print(f"❌ Mesh: {{mesh_name}}")
+                print(f"   💡 Suggested material folder: materials/{{suggested_folder}}/")
+                print(f"   📁 Expected textures:")
+                print(f"      - {{suggested_folder.lower()}}_diffuse.png (or similar)")
+                print(f"      - {{suggested_folder.lower()}}_normal.png (optional)")
+                print(f"      - {{suggested_folder.lower()}}_roughness.png (optional)")
+                print()
+
+            print("🔧 RECOMMENDATIONS:")
+            unique_folders = list(set([m["suggested_folder"] for m in material_report["missing_materials"]]))
+            for folder in unique_folders:
+                print(f"   📁 Create folder: materials/{{folder}}/")
+                print(f"      Add texture files with names containing:")
+                print(f"      - 'diffuse', 'albedo', or 'basecolor' for base textures")
+                print(f"      - 'normal' for normal maps")
+                print(f"      - 'roughness' for surface roughness")
+                print(f"      - 'metallic' for metallic maps")
+            print()
+        else:
+            print("🎉 All meshes have materials assigned!")
+            print()
+    else:
+        print("⚠️  No meshes found to apply materials to.")
         print()
 
     # Export GLB
@@ -240,6 +339,7 @@ try:
         export_texcoords=True,
         export_normals=True,
         export_materials='EXPORT',
+        export_tangents=True,
         export_animations=True,
         export_morph=True
     )
@@ -369,7 +469,13 @@ if __name__ == "__main__":
             print(f"  - {os.path.abspath(path)}")
         sys.exit(1)
 
+    # Determine correct output directory
+    # Always put GLB in step3_glb directory regardless of where script is run from
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # step3_glb directory
+    output_dir = script_dir  # Always output to step3_glb directory
+
     print(f"Using input file: {input_path}")
-    success = convert_fbx_to_glb(input_path, ".")
+    print(f"Output directory: {output_dir}")
+    success = convert_fbx_to_glb(input_path, output_dir)
     print(f"Conversion {'succeeded' if success else 'failed'}")
     sys.exit(0 if success else 1)
