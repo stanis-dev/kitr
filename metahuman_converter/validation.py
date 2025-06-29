@@ -165,9 +165,7 @@ try:
     result = {{
         "success": True,
         "blendshapes": [],
-        "bones": [],
-        "meshes": [],
-        "materials": []
+        "bones": []
     }}
     
     # Extract blendshapes
@@ -190,21 +188,6 @@ try:
                     "armature": obj.name
                 }})
     
-    # Extract meshes
-    for obj in bpy.data.objects:
-        if obj.type == 'MESH':
-            result["meshes"].append({{
-                "name": obj.name,
-                "vertices": len(obj.data.vertices),
-                "faces": len(obj.data.polygons)
-            }})
-    
-    # Extract materials
-    for material in bpy.data.materials:
-        result["materials"].append({{
-            "name": material.name
-        }})
-    
     # Save results
     with open("{output_file}", 'w') as f:
         json.dump(result, f, indent=2)
@@ -214,9 +197,7 @@ except Exception as e:
         "success": False,
         "error": str(e),
         "blendshapes": [],
-        "bones": [],
-        "meshes": [],
-        "materials": []
+        "bones": []
     }}
     
     with open("{output_file}", 'w') as f:

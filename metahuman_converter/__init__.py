@@ -1,13 +1,14 @@
 """
-MetaHuman to Babylon.js Avatar Converter
+MetaHuman FBX Validator
 
-A robust CLI pipeline to convert MetaHuman-exported avatars (FBX format, LOD0) 
-into optimized GLB files ready for Babylon.js with Azure viseme blendshapes.
+Simple Blender-based validation tool for MetaHuman FBX files.
+Validates Azure-compatible facial blendshapes.
 """
 
-__version__ = "0.1.0"
-__author__ = "MetaHuman Converter Team"
+__version__ = "1.0.0"
+__author__ = "MetaHuman Validator"
 
+# Core validation functionality
 from .validation import validate_fbx
 from .constants import AZURE_BLENDSHAPES
 

@@ -1,6 +1,6 @@
 """
-Constants for the MetaHuman converter pipeline.
-Contains the required Azure/ARKit blendshape names and other configuration.
+Constants for MetaHuman FBX validation.
+Contains the required Azure/ARKit blendshape names and bone requirements.
 """
 
 # Azure Cognitive Services expects these 52 ARKit-compatible facial blendshapes
@@ -108,14 +108,3 @@ REQUIRED_BONES = [
     "RightEye",
     "right_eye"
 ]
-
-# Maximum texture resolution (1024x1024)
-MAX_TEXTURE_RESOLUTION = 1024
-
-# FBX validation settings
-FBX_VALIDATION_CONFIG = {
-    "min_vertex_count": 1000,  # Minimum vertices for a valid head mesh
-    "max_vertex_count": 100000,  # Maximum vertices to prevent extremely heavy meshes
-    "required_uv_channels": 1,   # At least one UV channel required
-    "max_materials": 20          # Reasonable limit on material count
-}

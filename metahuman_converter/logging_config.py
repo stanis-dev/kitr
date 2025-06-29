@@ -1,6 +1,6 @@
 """
-Logging configuration for the MetaHuman converter pipeline.
-Provides detailed logging for each step of the conversion process.
+Logging configuration for MetaHuman FBX validation.
+Provides detailed logging for validation steps.
 """
 
 import logging
@@ -17,122 +17,129 @@ except ImportError:
     RICH_AVAILABLE = False
     # Fallback console
     class Console:
-        def print(self, text):
-            # Simple markup removal for fallback
-            if isinstance(text, str):
-                text = text.replace("[bold blue]", "").replace("[/bold blue]", "")
-                text = text.replace("[bold green]", "").replace("[/bold green]", "")
-                text = text.replace("[bold red]", "").replace("[/bold red]", "")
-                text = text.replace("[red]", "").replace("[/red]", "")
-                text = text.replace("[green]", "").replace("[/green]", "")
-                text = text.replace("[dim]", "").replace("[/dim]", "")
-            print(text)
-    
+        def print(self, *args, **kwargs):
+            print(*args)
+
+    # Simple markup removal for fallback
+    def remove_markup(text):
+        # Simple fallback - just strip common rich markup
+        import re
+        return re.sub(r'\[/?[^\]]*\]', '', str(text))
+
     class RichHandler(logging.Handler):
-        def __init__(self, **kwargs):
+        def __init__(self, *args, **kwargs):
             super().__init__()
+            
         def emit(self, record):
-            print(self.format(record))
+            msg = self.format(record)
+            print(remove_markup(msg))
 
 
 class MetaHumanLogger:
-    """Custom logger for the MetaHuman conversion pipeline."""
+    """Custom logger for MetaHuman validation."""
     
-    def __init__(self, name: str = "metahuman_converter", level: int = logging.INFO):
+    def __init__(self, name: str = "metahuman_validator", level: int = logging.INFO):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         self.console = Console()
         
-        # Remove existing handlers to avoid duplicates
-        for handler in self.logger.handlers[:]:
-            self.logger.removeHandler(handler)
-            
+        # Clear existing handlers
+        self.logger.handlers.clear()
+        
         # Setup rich console handler
         console_handler = RichHandler(
             console=self.console,
             show_time=True,
             show_path=False,
-            markup=True
+            rich_tracebacks=True
         )
         console_handler.setLevel(level)
         
         # Format for console output
         console_format = logging.Formatter(
-            "%(message)s",
-            datefmt="[%X]"
+            fmt="[%(asctime)s] %(levelname)-8s %(message)s",
+            datefmt="%H:%M:%S"
         )
         console_handler.setFormatter(console_format)
         
         self.logger.addHandler(console_handler)
-        
-    def add_file_handler(self, log_file: Path, level: int = logging.DEBUG):
-        """Add file handler for detailed logging to file."""
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setLevel(level)
-        
-        # Detailed format for file output
-        file_format = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
-        )
-        file_handler.setFormatter(file_format)
-        
-        self.logger.addHandler(file_handler)
-        
-    def step_start(self, step_name: str, description: str):
-        """Log the start of a pipeline step."""
+    
+    def info(self, message: str):
+        """Log info message."""
+        self.logger.info(message)
+    
+    def error(self, message: str):
+        """Log error message."""
+        self.logger.error(message)
+    
+    def warning(self, message: str):
+        """Log warning message."""
+        self.logger.warning(message)
+    
+    def debug(self, message: str):
+        """Log debug message."""
+        self.logger.debug(message)
+    
+    def step_start(self, step_name: str, description: str = ""):
+        """Log the start of a validation step."""
         self.console.print(f"\n[bold blue]🔧 Step: {step_name}[/bold blue]")
-        self.console.print(f"[dim]{description}[/dim]")
-        self.logger.info(f"Starting step: {step_name}")
-        
+        if description:
+            self.console.print(f"[dim]{description}[/dim]")
+        self.info(f"Starting step: {step_name}")
+    
     def step_complete(self, step_name: str, details: Optional[str] = None):
-        """Log the completion of a pipeline step."""
+        """Log the completion of a validation step."""
         self.console.print(f"[bold green]✅ Completed: {step_name}[/bold green]")
         if details:
             self.console.print(f"[dim]{details}[/dim]")
-        self.logger.info(f"Completed step: {step_name}")
-        
+        self.info(f"Completed step: {step_name}")
+    
     def step_error(self, step_name: str, error: str):
-        """Log an error during a pipeline step."""
+        """Log an error during a validation step."""
         self.console.print(f"[bold red]❌ Failed: {step_name}[/bold red]")
         self.console.print(f"[red]Error: {error}[/red]")
-        self.logger.error(f"Step {step_name} failed: {error}")
-        
-    def validation_result(self, item: str, status: bool, details: str = ""):
-        """Log validation results with visual indicators."""
-        icon = "✅" if status else "❌"
-        color = "green" if status else "red"
+        self.error(f"Step failed: {step_name} - {error}")
+    
+    def validation_result(self, item: str, success: bool, details: str = ""):
+        """Log a validation result."""
+        icon = "✅" if success else "❌"
+        color = "green" if success else "red"
         self.console.print(f"[{color}]{icon} {item}[/{color}]")
         if details:
             self.console.print(f"  [dim]{details}[/dim]")
-            
+    
     def found_items(self, category: str, items: list, expected_count: Optional[int] = None):
-        """Log found items (e.g., blendshapes, bones) with counts."""
+        """Log found items with preview."""
         count = len(items)
+        
         if expected_count:
-            status = "✅" if count >= expected_count else "⚠️"
+            status = "✅" if count >= expected_count else "❌"
             self.console.print(f"{status} Found {count}/{expected_count} {category}")
         else:
             self.console.print(f"ℹ️  Found {count} {category}")
+        
+        if items and count > 0:
+            # Show first few items as examples
+            preview_count = min(5, count)
+            preview_items = items[:preview_count]
+            remaining = count - preview_count
             
-        # Log first few items as examples
-        if items:
-            preview = items[:5] if len(items) > 5 else items
-            preview_text = ", ".join(preview)
-            if len(items) > 5:
-                preview_text += f" ... and {len(items) - 5} more"
+            preview_text = ", ".join(preview_items)
+            if remaining > 0:
+                preview_text += f" ... and {remaining} more"
+            
             self.console.print(f"  [dim]Examples: {preview_text}[/dim]")
+
+
+def setup_logging(level: int = logging.INFO, log_file: Optional[Path] = None):
+    """Setup logging configuration."""
+    # Configure root logger
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
 
 
 # Global logger instance
 logger = MetaHumanLogger()
-
-
-def setup_logging(level: int = logging.INFO, log_file: Optional[Path] = None):
-    """Setup logging for the application."""
-    global logger
-    logger = MetaHumanLogger(level=level)
-    
-    if log_file:
-        logger.add_file_handler(log_file)
-        
-    return logger
