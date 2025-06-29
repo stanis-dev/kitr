@@ -33,28 +33,24 @@ def main():
     print(f"📊 Size: {input_file.stat().st_size / (1024*1024):.1f} MB")
     print()
     
-    try:
-        result = validate_fbx(input_file)
-        
-        status = "✅ VALID" if result.is_valid else "❌ INVALID"
-        print(f"📋 Status: {status}")
-        print(f"🎭 Blendshapes: {len(result.found_blendshapes)}/52")
-        print(f"🦴 Bones: {len(result.found_bones)}")
-        
-        if result.errors:
-            print(f"❌ Errors: {len(result.errors)}")
-        
-        if result.warnings:
-            print(f"⚠️  Warnings: {len(result.warnings)}")
-        
-        print("=" * 30)
-        print("🎉 Done!" if result.is_valid else "💥 Failed!")
-        
-        return 0 if result.is_valid else 1
-        
-    except Exception as e:
-        print(f"💥 Error: {e}")
-        return 1
+    # No safeguards - fail fast if Blender is not available
+    result = validate_fbx(input_file)
+    
+    status = "✅ VALID" if result.is_valid else "❌ INVALID"
+    print(f"📋 Status: {status}")
+    print(f"🎭 Blendshapes: {len(result.found_blendshapes)}/52")
+    print(f"🦴 Bones: {len(result.found_bones)}")
+    
+    if result.errors:
+        print(f"❌ Errors: {len(result.errors)}")
+    
+    if result.warnings:
+        print(f"⚠️  Warnings: {len(result.warnings)}")
+    
+    print("=" * 30)
+    print("🎉 Done!" if result.is_valid else "💥 Failed!")
+    
+    return 0 if result.is_valid else 1
 
 
 if __name__ == "__main__":

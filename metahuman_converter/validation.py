@@ -96,44 +96,27 @@ def _process_with_blender(fbx_path: Path, result: FBXValidationResult):
     
     logger.validation_result("Blender processing", True, "Processing FBX with Blender")
     
-    # Run Blender
+    # Run Blender - fail fast if not available
     cmd = ['blender', '--background', '--python-expr', blender_script]
     
-    try:
-        process = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,  # 1 minute timeout
-            env=dict(os.environ, DISPLAY=":0")
-        )
-        
-        if process.returncode != 0:
-            result.add_error(f"Blender processing failed: {process.stderr}")
-            return
-        
-        # Read results
-        try:
-            with open(output_file, 'r') as f:
-                blender_data = json.load(f)
-            
-            _process_blender_results(blender_data, result)
-            logger.validation_result("Blender processing", True, "Successfully processed FBX")
-            
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            result.add_error(f"Failed to read Blender output: {e}")
+    process = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,  # 1 minute timeout
+        env=dict(os.environ, DISPLAY=":0"),
+        check=True  # Raises CalledProcessError if returncode != 0
+    )
     
-    except subprocess.TimeoutExpired:
-        result.add_error("Blender processing timed out after 60 seconds")
-    except Exception as e:
-        result.add_error(f"Blender execution failed: {e}")
+    # Read results - fail fast if output is invalid
+    with open(output_file, 'r') as f:
+        blender_data = json.load(f)
     
-    finally:
-        # Clean up
-        try:
-            output_file.unlink()
-        except Exception:
-            pass
+    _process_blender_results(blender_data, result)
+    logger.validation_result("Blender processing", True, "Successfully processed FBX")
+    
+    # Clean up
+    output_file.unlink()
 
 
 def _create_blender_script(input_file: Path, output_file: Path) -> str:
@@ -218,9 +201,9 @@ except Exception as e:
 
 def _process_blender_results(blender_data: Dict, result: FBXValidationResult):
     """Process Blender output data."""
+    # Fail fast if Blender had an error
     if not blender_data.get("success", False):
-        result.add_error(f"Blender error: {blender_data.get('error', 'Unknown error')}")
-        return
+        raise RuntimeError(f"Blender processing failed: {blender_data.get('error', 'Unknown error')}")
     
     # Extract blendshapes
     blendshapes = blender_data.get("blendshapes", [])
