@@ -77,7 +77,8 @@ def check_prerequisites() -> bool:
     required_scripts = [
         "step1_validation/validate.py",
         "step2_morphs/azure_processor.py",
-        "step3_glb/simple_converter.py"
+        "step3_glb/simple_converter.py",
+        "step4_render/glb_animator.py"
     ]
 
     for script in required_scripts:
@@ -120,12 +121,14 @@ def show_pipeline_summary():
     print("│   └─ Output: azure_optimized.fbx")
     print("├─ Step 3: FBX to GLB Conversion")
     print("│   └─ Output: step3_glb/azure_optimized_web.glb")
-    print("├─ Step 4: GLB Optimization [NOT IMPLEMENTED]")
-    print("│   └─ Output: step4_optimize/optimized.glb")
-    print("├─ Step 5: Texture Optimization [NOT IMPLEMENTED]")
-    print("│   └─ Output: step5_textures/output-step5-optimized.glb")
-    print("└─ Step 6: Final Validation [NOT IMPLEMENTED]")
-    print("    └─ Output: step6_final/output-final-avatar.glb")
+    print("├─ Step 4: GLB Animation Validation")
+    print("│   └─ Output: step4_render/output/animation_validation_report.json + rendered frames")
+    print("├─ Step 5: GLB Optimization [NOT IMPLEMENTED]")
+    print("│   └─ Output: step5_optimize/optimized.glb")
+    print("├─ Step 6: Texture Optimization [NOT IMPLEMENTED]")
+    print("│   └─ Output: step6_textures/output-step6-optimized.glb")
+    print("└─ Step 7: Final Validation [NOT IMPLEMENTED]")
+    print("    └─ Output: step7_final/output-final-avatar.glb")
     print("\n🔒 File Immutability: Original input-file.fbx is never modified")
 
 
@@ -143,9 +146,10 @@ def show_final_summary(steps_completed: int, total_time: float):
     output_files = [
         "azure_optimized.fbx",
         "step3_glb/azure_optimized_web.glb",
-        "step4_optimize/optimized.glb",
-        "step5_textures/output-step5-optimized.glb",
-        "step6_final/output-final-avatar.glb"
+        "step4_render/output/animation_validation_report.json",
+        "step5_optimize/optimized.glb",
+        "step6_textures/output-step6-optimized.glb",
+        "step7_final/output-final-avatar.glb"
     ]
 
     for i, output_file in enumerate(output_files, 2):
@@ -157,11 +161,11 @@ def show_final_summary(steps_completed: int, total_time: float):
             print(f"❌ Step {i}: {output_file} - MISSING (step may have failed)")
 
     print(f"\n⏱️  Total execution time: {total_time:.1f}s")
-    print(f"📊 Steps completed: {steps_completed}/6")
+    print(f"📊 Steps completed: {steps_completed}/7")
 
-    if steps_completed == 3:  # All currently implemented steps
+    if steps_completed == 4:  # All currently implemented steps
         print("✅ All implemented steps completed successfully!")
-    elif steps_completed < 3:
+    elif steps_completed < 4:
         print("❌ Pipeline failed - not all steps completed")
 
     print("\n🔒 File immutability maintained - original input preserved")
@@ -196,10 +200,11 @@ def main():
         ("Step 1", "step1_validation/validate.py", "FBX Validation & Azure Blendshape Check"),
         ("Step 2", "step2_morphs/azure_processor.py", "Azure FBX Optimization"),
         ("Step 3", "step3_glb/simple_converter.py", "FBX to GLB Conversion"),
+        ("Step 4", "step4_render/glb_animator.py", "GLB Animation Validation"),
         # Future steps will be added here as they're implemented
-        # ("Step 4", "step4_optimize.py", "GLB Optimization & Compression"),
-        # ("Step 5", "step5_textures.py", "Texture Resolution Optimization"),
-        # ("Step 6", "step6_final.py", "Final Validation & Browser Compatibility"),
+        # ("Step 5", "step5_optimize.py", "GLB Optimization & Compression"),
+        # ("Step 6", "step6_textures.py", "Texture Resolution Optimization"),
+        # ("Step 7", "step7_final.py", "Final Validation & Browser Compatibility"),
     ]
 
     # Execute each step

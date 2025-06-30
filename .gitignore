@@ -1,6 +1,7 @@
 # Materials and outputs
 materials/
 step3_glb/azure_optimized_web.glb
+step4_render/output/
 materials.zip
 
 # Python cache and temporary files
