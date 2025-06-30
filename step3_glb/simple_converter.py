@@ -159,40 +159,18 @@ try:
     print(f"Mesh objects: {{len(meshes)}}")
     print()
 
-    # Strip all LOD meshes except LOD0
-    print("🔄 Stripping LOD meshes (keeping only LOD0)...")
-    lod_stats = {{
-        "total_meshes": len(meshes),
-        "lod_meshes_found": 0,
-        "lod_meshes_removed": 0,
-        "kept_meshes": 0
-    }}
+    # Preserve ALL Azure-relevant mesh primitives
+    print("✅ Preserving all Azure-relevant mesh primitives...")
+    print("   📊 All LOD levels preserved for complete Azure compatibility")
+    print("   🎯 Only collision meshes were removed in Step 2")
 
-    meshes_to_remove = []
-    for obj in meshes:
-        mesh_name = obj.name.lower()
-        # Check if this is a LOD mesh (but not LOD0)
-        if ('_lod1' in mesh_name or '_lod2' in mesh_name or '_lod3' in mesh_name or
-            'lod1' in mesh_name or 'lod2' in mesh_name or 'lod3' in mesh_name):
-            meshes_to_remove.append(obj)
-            lod_stats["lod_meshes_found"] += 1
-            print(f"  🗑️  Marking for removal: {{obj.name}}")
+    remaining_meshes = [obj for obj in bpy.data.objects if obj.type == 'MESH']
 
-    # Remove LOD meshes
-    for obj in meshes_to_remove:
-        print(f"  ❌ Removing LOD mesh: {{obj.name}}")
-        bpy.data.objects.remove(obj, do_unlink=True)
-        lod_stats["lod_meshes_removed"] += 1
-
-    # Update mesh list
-    remaining_objects = list(bpy.data.objects)
-    remaining_meshes = [obj for obj in remaining_objects if obj.type == 'MESH']
-    lod_stats["kept_meshes"] = len(remaining_meshes)
-
-    print(f"✅ LOD stripping complete:")
-    print(f"   📊 Original meshes: {{lod_stats['total_meshes']}}")
-    print(f"   🗑️  LOD meshes removed: {{lod_stats['lod_meshes_removed']}}")
-    print(f"   ✅ Remaining meshes: {{lod_stats['kept_meshes']}}")
+    print(f"📦 Mesh preservation summary:")
+    print(f"   ✅ Total meshes preserved: {{len(remaining_meshes)}}")
+    for obj in remaining_meshes:
+        mesh_type = "Face" if "face" in obj.name.lower() else "LOD" if "lod" in obj.name.lower() else "Other"
+        print(f"   - {{obj.name}} ({{mesh_type}})")
     print()
 
 {materials_search_code}
@@ -329,7 +307,41 @@ try:
         print("⚠️  No meshes found to apply materials to.")
         print()
 
-    # Export GLB
+    # Enhanced morph target validation before export
+    print("🔍 Validating morph targets before GLB export...")
+    morph_validation = {{
+        "meshes_with_morphs": 0,
+        "total_morph_targets": 0,
+        "morph_details": []
+    }}
+
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH' and obj.data.shape_keys:
+            shape_keys = obj.data.shape_keys
+            if shape_keys and shape_keys.key_blocks:
+                morph_count = len(shape_keys.key_blocks) - 1  # Exclude Basis
+                if morph_count > 0:
+                    morph_validation["meshes_with_morphs"] += 1
+                    morph_validation["total_morph_targets"] += morph_count
+
+                    # Get morph target names
+                    morph_names = [kb.name for kb in shape_keys.key_blocks if kb.name != "Basis"]
+                    morph_validation["morph_details"].append({{
+                        "mesh": obj.name,
+                        "count": morph_count,
+                        "names": morph_names[:10]  # Show first 10
+                    }})
+
+                    print(f"✅ {{obj.name}}: {{morph_count}} morph targets")
+                    if morph_count <= 10:
+                        print(f"   Targets: {{', '.join(morph_names)}}")
+                    else:
+                        print(f"   First 10: {{', '.join(morph_names[:10])}}...")
+
+    print(f"📊 Pre-export summary: {{morph_validation['meshes_with_morphs']}} meshes, {{morph_validation['total_morph_targets']}} total morphs")
+    print()
+
+    # Export GLB with enhanced morph settings
     print(f"Exporting GLB: {glb_path}")
     result = bpy.ops.export_scene.gltf(
         filepath="{glb_path}",
@@ -341,15 +353,42 @@ try:
         export_materials='EXPORT',
         export_tangents=True,
         export_animations=True,
-        export_morph=True
+        export_morph=True,
+        export_morph_normal=True,
+        export_morph_tangent=True,
+        export_attributes=True
     )
     print(f"Export result: {{result}}")
 
-    # Check if file was created
+    # Check if file was created and validate morph targets
     import os
     if os.path.exists("{glb_path}"):
         size = os.path.getsize("{glb_path}")
         print(f"GLB file created successfully! Size: {{size}} bytes")
+
+        # Post-export validation: Re-import GLB and check morphs
+        print("🔍 Post-export morph validation...")
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.import_scene.gltf(filepath="{glb_path}")
+
+        post_export_morphs = 0
+        for obj in bpy.data.objects:
+            if obj.type == 'MESH' and obj.data.shape_keys:
+                shape_keys = obj.data.shape_keys
+                if shape_keys and shape_keys.key_blocks:
+                    morph_count = len(shape_keys.key_blocks) - 1  # Exclude Basis
+                    if morph_count > 0:
+                        post_export_morphs += morph_count
+                        morph_names = [kb.name for kb in shape_keys.key_blocks if kb.name != "Basis"]
+                        print(f"✅ GLB {{obj.name}}: {{morph_count}} morphs preserved")
+                        print(f"   Sample: {{', '.join(morph_names[:5])}}...")
+
+        print(f"📊 GLB morph validation: {{post_export_morphs}} total morph targets confirmed")
+
+        if post_export_morphs == morph_validation["total_morph_targets"]:
+            print("🎉 All morph targets successfully exported to GLB!")
+        else:
+            print(f"⚠️  Morph count mismatch: Expected {{morph_validation['total_morph_targets']}}, Got {{post_export_morphs}}")
     else:
         print("ERROR: GLB file was not created!")
 

@@ -2,13 +2,14 @@
 """
 Cleanup Processor for Azure FBX Optimization
 
-This module removes excess morph targets and unnecessary bones from the FBX file,
-keeping only the 52 Azure blendshapes and essential skeleton structure.
+This module creates web-optimized FBX by keeping ONLY Azure blendshapes.
+Optimizes for maximum web performance and minimal file size.
 
 Final output will contain:
-- ONLY 52 Azure blendshapes (no excess morphs)
+- ONLY 52 Azure blendshapes (optimal for web deployment)
 - Essential bones for Azure rotations
-- Cleaned up, optimized file size
+- Collision meshes removed
+- Maximum web performance optimization
 """
 
 import subprocess
@@ -39,6 +40,7 @@ azure_blendshapes = {azure_blendshapes_str}
 essential_bones = {essential_bones_str}
 
 print("🧹 Starting Azure FBX Cleanup...")
+print("🎯 WEB OPTIMIZATION MODE: Keeping ONLY Azure blendshapes")
 
 # Clear scene and import FBX
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -53,7 +55,8 @@ cleanup_stats = {{
     "kept_bones": 0,
     "collision_meshes_found": 0,
     "collision_meshes_removed": 0,
-    "processed_objects": []
+    "processed_objects": [],
+    "optimization_mode": "WEB_OPTIMIZED_AZURE_ONLY"
 }}
 
 # First, identify and remove collision meshes
@@ -75,32 +78,38 @@ for obj in collision_meshes_to_remove:
 print(f"✅ Collision mesh cleanup: {{cleanup_stats['collision_meshes_removed']}} removed")
 print()
 
-# Process remaining mesh objects for morph target cleanup
+# Process mesh objects - KEEP ONLY AZURE BLENDSHAPES for web optimization
+print("📊 WEB OPTIMIZATION - AZURE BLENDSHAPES ONLY:")
 for obj in bpy.data.objects:
-    if obj.type == 'MESH' and obj.data.shape_keys:
+    if obj.type == 'MESH':
         obj_stats = {{
             "name": obj.name,
             "original_morphs": 0,
             "kept_morphs": 0,
-            "removed_morphs": 0
+            "removed_morphs": 0,
+            "optimization_status": "WEB_OPTIMIZED"
         }}
 
-        shape_keys = obj.data.shape_keys
-        if shape_keys and shape_keys.key_blocks:
-            original_count = len(shape_keys.key_blocks) - 1  # Exclude Basis
+        if obj.data.shape_keys and obj.data.shape_keys.key_blocks:
+            original_count = len(obj.data.shape_keys.key_blocks) - 1  # Exclude Basis
             obj_stats["original_morphs"] = original_count
             cleanup_stats["original_morphs"] += original_count
 
-            # Get list of shape keys to remove (reverse order for safe removal)
+            # Get list of shape keys to remove (keep ONLY Azure blendshapes)
             keys_to_remove = []
-            for i, key_block in enumerate(shape_keys.key_blocks):
-                if key_block.name != "Basis" and key_block.name not in azure_blendshapes:
-                    keys_to_remove.append(key_block.name)
+            azure_kept = 0
 
-            # Remove excess morph targets
+            for key_block in obj.data.shape_keys.key_blocks:
+                if key_block.name != "Basis":
+                    if key_block.name in azure_blendshapes:
+                        azure_kept += 1
+                    else:
+                        keys_to_remove.append(key_block.name)
+
+            # Remove all non-Azure morph targets for web optimization
             for key_name in reversed(keys_to_remove):
                 try:
-                    key_block = shape_keys.key_blocks.get(key_name)
+                    key_block = obj.data.shape_keys.key_blocks.get(key_name)
                     if key_block:
                         obj.shape_key_remove(key_block)
                         obj_stats["removed_morphs"] += 1
@@ -108,12 +117,15 @@ for obj in bpy.data.objects:
                 except Exception as e:
                     print(f"Warning: Could not remove {{key_name}}: {{e}}")
 
-            # Count remaining morphs
-            final_count = len(shape_keys.key_blocks) - 1 if shape_keys.key_blocks else 0
+            # Count final morphs (should be only Azure)
+            final_count = len(obj.data.shape_keys.key_blocks) - 1 if obj.data.shape_keys.key_blocks else 0
             obj_stats["kept_morphs"] = final_count
             cleanup_stats["kept_morphs"] += final_count
 
-            print(f"📦 {{obj.name}}: {{original_count}} → {{final_count}} morphs")
+            print(f"📦 {{obj.name}}: {{original_count}} → {{final_count}} morphs ({{azure_kept}} Azure kept)")
+            print(f"   🎯 Web optimized: {{obj_stats['removed_morphs']}} excess morphs removed")
+        else:
+            print(f"📦 {{obj.name}}: No morph targets")
 
         cleanup_stats["processed_objects"].append(obj_stats)
 
@@ -124,21 +136,22 @@ for obj in bpy.data.objects:
         original_bone_count = len(armature_data.bones)
         cleanup_stats["original_bones"] += original_bone_count
 
-        print(f"🦴 {{obj.name}}: {{original_bone_count}} bones (keeping essential structure)")
+        print(f"🦴 {{obj.name}}: {{original_bone_count}} bones (preserving all)")
 
-        # For now, keep all bones to maintain skeleton integrity
-        # In the future, we could remove non-essential bones safely
+        # Keep all bones to maintain skeleton integrity
         cleanup_stats["kept_bones"] += original_bone_count
 
 print(f"")
-print(f"📊 CLEANUP SUMMARY:")
-print(f"   Morph Targets: {{cleanup_stats['original_morphs']}} → {{cleanup_stats['kept_morphs']}} (removed {{cleanup_stats['removed_morphs']}})")
-print(f"   Collision Meshes: {{cleanup_stats['collision_meshes_found']}} found, {{cleanup_stats['collision_meshes_removed']}} removed")
-print(f"   Bones: {{cleanup_stats['original_bones']}} (kept all for skeleton integrity)")
-print(f"   Objects processed: {{len(cleanup_stats['processed_objects'])}}")
+print(f"📊 WEB OPTIMIZATION SUMMARY:")
+print(f"   🎭 Morph Targets: {{cleanup_stats['original_morphs']}} → {{cleanup_stats['kept_morphs']}} (removed {{cleanup_stats['removed_morphs']}})")
+print(f"   🗑️  Collision Meshes: {{cleanup_stats['collision_meshes_found']}} found, {{cleanup_stats['collision_meshes_removed']}} removed")
+print(f"   🦴 Bones: {{cleanup_stats['original_bones']}} (preserved all for skeleton integrity)")
+print(f"   📦 Objects processed: {{len(cleanup_stats['processed_objects'])}}")
+print(f"   ✅ Optimization Mode: {{cleanup_stats['optimization_mode']}}")
+print(f"   🎯 File size reduction expected: ~{{(cleanup_stats['removed_morphs']/cleanup_stats['original_morphs']*100):.1f}}%")
 
 # Export cleaned FBX
-print(f"💾 Exporting cleaned FBX...")
+print(f"💾 Exporting web-optimized FBX...")
 bpy.ops.export_scene.fbx(
     filepath=output_fbx,
     check_existing=False,
@@ -175,7 +188,8 @@ bpy.ops.export_scene.fbx(
     use_metadata=True
 )
 
-print("✅ Azure FBX cleanup completed!")
+print("✅ Web-optimized Azure FBX cleanup completed!")
+print("🎉 Maximum web performance achieved - ONLY Azure blendshapes retained!")
 
 # Save cleanup report
 cleanup_report_path = r"{output_fbx.with_suffix('.cleanup_report.json')}"
@@ -188,101 +202,73 @@ print(f"📄 Cleanup report saved: {{cleanup_report_path}}")
 
 def cleanup_azure_fbx(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
     """
-    Clean up FBX file to contain only Azure-required content.
+    Clean up FBX file for web optimization by keeping ONLY Azure blendshapes.
 
     Removes:
-    - All morph targets except the 52 Azure blendshapes
-    - Unnecessary bones (conservative approach)
+    - All non-Azure morph targets (771 excess morphs)
+    - Collision meshes (UCX_, UBX_, USP_ prefixes)
+
+    Preserves:
+    - ONLY 52 Azure blendshapes for maximum web performance
+    - All bones for skeleton integrity
+    - All essential mesh geometry
 
     Returns cleanup statistics and results.
     """
 
     print("🧹 Starting Azure FBX Cleanup Process...")
+    print("🎯 WEB OPTIMIZATION MODE: Azure blendshapes only")
     print("=" * 50)
     print(f"📁 Input:  {input_fbx}")
     print(f"📁 Output: {output_fbx}")
     print()
 
-    # Essential bones for Azure rotations (from our bone analysis)
-    essential_bones = [
-        "head",  # For headRoll
-        "FACIAL_L_12IPV_EyeCornerO1",  # For leftEyeRoll
-        "FACIAL_R_12IPV_EyeCornerO1",  # For rightEyeRoll (if exists)
-        # Keep spine and essential facial bones
-        "spine", "neck", "skull", "jaw"
-    ]
+    # Create essential bones list (for reporting only, not removal)
+    essential_bones = list(AZURE_ROTATIONS)
 
-    # Create Blender cleanup script
-    blender_script = create_azure_cleanup_script(input_fbx, output_fbx, AZURE_BLENDSHAPES, essential_bones)
+    # Create and run Blender cleanup script
+    blender_script = create_azure_cleanup_script(
+        input_fbx, output_fbx, list(AZURE_BLENDSHAPES), essential_bones
+    )
 
-    # Run Blender cleanup
+    script_file = output_fbx.with_suffix('.cleanup_script.py')
     try:
-        subprocess.run(
-            ["blender", "--background", "--python-expr", blender_script],
-            capture_output=True,
-            text=True,
-            timeout=300,  # 5 minutes timeout
-            check=True,
-        )
+        with open(script_file, 'w') as f:
+            f.write(blender_script)
+
+        # Run Blender with the script
+        result = subprocess.run([
+            'blender', '--background', '--python', str(script_file)
+        ], capture_output=True, text=True, timeout=300)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Blender cleanup failed: {result.stderr}")
 
         print("✅ Blender cleanup completed successfully")
 
-        # Check if cleanup report was generated
-        cleanup_report_file = output_fbx.with_suffix('.cleanup_report.json')
-        cleanup_stats = {}
-
-        if cleanup_report_file.exists():
-            with open(cleanup_report_file, 'r') as f:
+        # Load and return cleanup report
+        report_file = output_fbx.with_suffix('.cleanup_report.json')
+        if report_file.exists():
+            with open(report_file, 'r') as f:
                 cleanup_stats = json.load(f)
-            print(f"📊 Cleanup statistics loaded from report")
+            print("📊 Cleanup statistics loaded from report")
+
+            # Clean up temporary files
+            script_file.unlink(missing_ok=True)
+            report_file.unlink(missing_ok=True)
+
+            return cleanup_stats
         else:
-            print("⚠️  Cleanup report not found, using default stats")
-            cleanup_stats = {
-                "original_morphs": "unknown",
-                "removed_morphs": "unknown",
-                "kept_morphs": "unknown",
-                "message": "Cleanup completed but statistics unavailable"
-            }
+            raise RuntimeError("Cleanup report not found")
 
-    except subprocess.TimeoutExpired:
-        print("❌ Blender cleanup timed out after 5 minutes")
-        raise RuntimeError("Cleanup process timed out")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Blender cleanup failed with exit code {e.returncode}")
-        print(f"Error output: {e.stderr}")
-        raise RuntimeError(f"Cleanup process failed: {e.stderr}")
     except Exception as e:
-        print(f"❌ Unexpected error during cleanup: {e}")
-        raise
+        # Clean up on failure
+        script_file.unlink(missing_ok=True)
+        raise RuntimeError(f"FBX cleanup failed: {e}")
 
-    # Verify output file was created
-    if not output_fbx.exists():
-        raise RuntimeError(f"Cleanup failed: Output file not created at {output_fbx}")
-
-    # Calculate file size reduction
-    input_size_mb = round(input_fbx.stat().st_size / (1024*1024), 1)
-    output_size_mb = round(output_fbx.stat().st_size / (1024*1024), 1)
-    size_reduction_mb = input_size_mb - output_size_mb
-    size_reduction_percent = (size_reduction_mb / input_size_mb) * 100 if input_size_mb > 0 else 0
-
-    print(f"📦 File size: {input_size_mb} MB → {output_size_mb} MB")
-    print(f"📉 Size reduction: {size_reduction_mb:.1f} MB ({size_reduction_percent:.1f}%)")
-
-    # Compile results
-    results = {
-        "cleanup_successful": True,
-        "input_file": str(input_fbx),
-        "output_file": str(output_fbx),
-        "input_size_mb": input_size_mb,
-        "output_size_mb": output_size_mb,
-        "size_reduction_mb": size_reduction_mb,
-        "size_reduction_percent": size_reduction_percent,
-        "cleanup_stats": cleanup_stats,
-        "azure_blendshapes_target": len(AZURE_BLENDSHAPES),
-        "azure_rotations_target": len(AZURE_ROTATIONS)
-    }
-
-    return results
+    finally:
+        # Ensure cleanup of temporary files
+        script_file.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

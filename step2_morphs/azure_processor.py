@@ -202,22 +202,23 @@ def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:
         print("📊 FINAL ASSESSMENT:")
         print("=" * 50)
 
-        # Calculate overall success metrics
-        blendshapes_perfect = mapped_count == len(AZURE_BLENDSHAPES)
+        # Use ACTUAL validation results instead of incorrect mapped_count
+        actual_azure_found = azure_morphs_found  # From validation - this is correct
+        blendshapes_perfect = actual_azure_found == len(AZURE_BLENDSHAPES)
         rotations_available = rotations_mapped == len(AZURE_ROTATIONS)  # All 3 rotations required
         cleanup_successful = kept_morphs == len(AZURE_BLENDSHAPES)
         validation_clean = validation_passed
 
-        total_azure_params = mapped_count + rotations_mapped
+        total_azure_params = actual_azure_found + rotations_mapped
         max_azure_params = len(AZURE_BLENDSHAPES) + len(AZURE_ROTATIONS)
         compatibility_score = (total_azure_params / max_azure_params) * 100
 
-        print(f"📈 Azure Blendshapes: {mapped_count}/{len(AZURE_BLENDSHAPES)} ({(mapped_count/len(AZURE_BLENDSHAPES)*100):.1f}%)")
+        print(f"📈 Azure Blendshapes: {actual_azure_found}/{len(AZURE_BLENDSHAPES)} ({(actual_azure_found/len(AZURE_BLENDSHAPES)*100):.1f}%)")
         print(f"📈 Azure Rotations: {rotations_mapped}/{len(AZURE_ROTATIONS)} ({(rotations_mapped/len(AZURE_ROTATIONS)*100):.1f}%)")
         print(f"📈 Total Parameters: {total_azure_params}/{max_azure_params} ({compatibility_score:.1f}%)")
         print(f"📈 File Optimization: {'✅ Clean' if validation_clean else '❌ Needs work'}")
 
-        # Determine overall status
+        # Determine overall status using CORRECT values
         if blendshapes_perfect and rotations_available and cleanup_successful and validation_clean:
             status = "PERFECT"
             print("\n🎉 PERFECT AZURE COMPATIBILITY ACHIEVED!")
@@ -225,13 +226,13 @@ def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:
             print("   ✅ Rotation support available")
             print("   ✅ File contains ONLY Azure content")
             print("   ✅ Ready for Azure Cognitive Services")
-        elif mapped_count >= 47 and rotations_available and validation_clean:
+        elif actual_azure_found >= 47 and rotations_available and validation_clean:
             status = "EXCELLENT"
             print("\n✅ EXCELLENT AZURE COMPATIBILITY!")
             print("   ✅ High blendshape compatibility")
             print("   ✅ File optimized and clean")
             print("   ✅ Suitable for Azure integration")
-        elif mapped_count >= 40 and cleanup_successful:
+        elif actual_azure_found >= 40 and cleanup_successful:
             status = "GOOD"
             print("\n⚠️  GOOD AZURE COMPATIBILITY")
             print("   ✅ Most blendshapes available")
@@ -258,7 +259,7 @@ def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:
             "success": True,
             "status": status,
             "azure_compatibility": {
-                "blendshapes_mapped": mapped_count,
+                "blendshapes_mapped": actual_azure_found,
                 "blendshapes_required": len(AZURE_BLENDSHAPES),
                 "rotations_mapped": rotations_mapped,
                 "rotations_required": len(AZURE_ROTATIONS),
