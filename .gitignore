@@ -1,3 +1,36 @@
-materials
+# Materials and outputs
+materials/
 step3_glb/azure_optimized_web.glb
 materials.zip
+
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.tmp
+
+# FBX intermediate and temporary files
+output-step2-azure-mapped.fbx
+*-temp.fbx
+*-backup.fbx
+debug_*.py
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor and IDE files
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Blender temporary files
+*.blend1
+*.blend2
+untitled.blend
