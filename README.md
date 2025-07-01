@@ -29,8 +29,8 @@ kitr/
 │   ├── README.md                      # Documentation overview
 │   ├── step2_success_summary.md       # ⭐ MAIN SUCCESS REPORT
 │   ├── step2_cleanup_success.md       # Cleanup & validation details
-│   ├── azure_blendshapes_complete.*   # Complete Azure parameter lists
-│   ├── original_fbx_morph_targets.*   # Original 823 morph documentation
+│   ├── azure_blendshapes_complete.json   # Complete Azure parameter list
+│   ├── original_fbx_morph_targets.json   # Original 823 morph documentation
 │   └── morph_targets_comparison.txt   # Analysis comparison
 │
 ├── step1_validation/                  # 🔍 Validation & Constants
@@ -184,8 +184,8 @@ python validate_clean_fbx.py
 ### Complete Documentation Available:
 - **`docs/step2_success_summary.md`** - ⭐ **MAIN SUCCESS REPORT**
 - **`docs/step2_cleanup_success.md`** - Cleanup process details
-- **`docs/azure_blendshapes_complete.*`** - All Azure parameters
-- **`docs/original_fbx_morph_targets.*`** - Original 823 morphs
+- **`docs/azure_blendshapes_complete.json`** - All Azure parameters
+- **`docs/original_fbx_morph_targets.json`** - Original 823 morphs
 - **`docs/README.md`** - Documentation overview
 
 ### Processing Reports:
