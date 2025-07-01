@@ -3,86 +3,33 @@ Constants for MetaHuman FBX validation.
 Contains the required Azure/ARKit blendshape names, bone requirements, and input FBX blendshapes.
 """
 
+import json
+from pathlib import Path
+
+# Load Azure blendshapes and rotations from docs JSON file to avoid duplication
+_docs_path = Path(__file__).parent.parent / "docs" / "azure_blendshapes_complete.json"
+with open(_docs_path, 'r') as f:
+    _azure_data = json.load(f)
+
 # Azure Cognitive Services expects these 52 ARKit-compatible facial blendshapes
 # plus 3 rotation parameters (headRoll, leftEyeRoll, rightEyeRoll)
 # Reference: Azure Cognitive Services documentation for 3D viseme output
-AZURE_BLENDSHAPES = [
-    # Eye blendshapes
-    "eyeBlinkLeft",
-    "eyeLookDownLeft",
-    "eyeLookInLeft",
-    "eyeLookOutLeft",
-    "eyeLookUpLeft",
-    "eyeSquintLeft",
-    "eyeWideLeft",
-    "eyeBlinkRight",
-    "eyeLookDownRight",
-    "eyeLookInRight",
-    "eyeLookOutRight",
-    "eyeLookUpRight",
-    "eyeSquintRight",
-    "eyeWideRight",
-
-    # Jaw blendshapes
-    "jawForward",
-    "jawLeft",
-    "jawRight",
-    "jawOpen",
-
-    # Mouth blendshapes
-    "mouthClose",
-    "mouthFunnel",
-    "mouthPucker",
-    "mouthLeft",
-    "mouthRight",
-    "mouthSmileLeft",
-    "mouthSmileRight",
-    "mouthFrownLeft",
-    "mouthFrownRight",
-    "mouthDimpleLeft",
-    "mouthDimpleRight",
-    "mouthStretchLeft",
-    "mouthStretchRight",
-    "mouthRollLower",
-    "mouthRollUpper",
-    "mouthShrugLower",
-    "mouthShrugUpper",
-    "mouthPressLeft",
-    "mouthPressRight",
-    "mouthLowerDownLeft",
-    "mouthLowerDownRight",
-    "mouthUpperUpLeft",
-    "mouthUpperUpRight",
-
-    # Brow blendshapes
-    "browDownLeft",
-    "browDownRight",
-    "browInnerUp",
-    "browOuterUpLeft",
-    "browOuterUpRight",
-
-    # Cheek blendshapes
-    "cheekPuff",
-    "cheekSquintLeft",
-    "cheekSquintRight",
-
-    # Nose blendshapes
-    "noseSneerLeft",
-    "noseSneerRight",
-
-    # Tongue blendshape
-    "tongueOut"
-]
+#
+# Categories breakdown:
+# - Eye blendshapes (14): eyeBlink*, eyeLook*, eyeSquint*, eyeWide*
+# - Jaw blendshapes (4): jaw*
+# - Mouth blendshapes (24): mouth*
+# - Brow blendshapes (5): brow*
+# - Cheek blendshapes (3): cheek*
+# - Nose blendshapes (2): nose*
+# - Tongue blendshape (1): tongueOut
+AZURE_BLENDSHAPES = _azure_data["facial_blendshapes"]
 
 # The three rotation parameters that Azure outputs (indices 52-54)
-AZURE_ROTATIONS = [
-    "headRoll",      # Head tilt rotation
-    "leftEyeRoll",   # Left eye rotation
-    "rightEyeRoll"   # Right eye rotation
-]
+AZURE_ROTATIONS = _azure_data["rotation_parameters"]
 
 # Total number of parameters Azure outputs: 52 blendshapes + 3 rotations = 55
-TOTAL_AZURE_PARAMETERS = len(AZURE_BLENDSHAPES) + len(AZURE_ROTATIONS)
+TOTAL_AZURE_PARAMETERS = _azure_data["total_parameters"]
 
 # MetaHuman naming variations that need mapping to Azure blendshapes
 # Based on analysis of actual MetaHuman FBX morph target names
