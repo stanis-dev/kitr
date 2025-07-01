@@ -1,7 +1,8 @@
-# Materials and outputs
+# Pipeline output directory - contains all generated artifacts
+output/
+
+# Legacy materials directory (if present)
 materials/
-step3_glb/azure_optimized_web.glb
-step4_render/output/
 materials.zip
 
 # Python cache and temporary files
@@ -12,8 +13,7 @@ __pycache__/
 .Python
 *.tmp
 
-# FBX intermediate and temporary files
-output-step2-azure-mapped.fbx
+# FBX temporary files (development artifacts)
 *-temp.fbx
 *-backup.fbx
 debug_*.py

@@ -9,7 +9,10 @@ kitr/
 ├── README.md                          # This file
 ├── pipeline.py                        # Main pipeline orchestrator
 ├── input-file.fbx                     # Input MetaHuman FBX file
-├── azure_optimized.fbx                # Output from step 2 (Azure optimized)
+├── output/                            # Generated artifacts (excluded from git)
+│   ├── step2/azure_optimized.fbx    # Azure optimization output
+│   ├── step3/azure_optimized_web.glb # GLB conversion output
+│   └── step4/                       # Animation validation outputs
 ├── requirements.txt                   # Python dependencies
 │
 ├── docs/                              # Reference documentation
@@ -78,6 +81,6 @@ python step4_render/glb_animator.py
 
 Each step produces new output files while preserving the original input:
 
-- `input-file.fbx` → `azure_optimized.fbx` → `step3_glb/azure_optimized_web.glb`
+- `input-file.fbx` → `output/step2/azure_optimized.fbx` → `output/step3/azure_optimized_web.glb`
 
 Original input file is never modified.

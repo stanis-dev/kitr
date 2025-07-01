@@ -255,7 +255,7 @@ def process_azure_bones(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test with current output file
-    input_fbx = Path("azure_optimized.fbx")
+    input_fbx = Path("output/step2/azure_optimized.fbx")
     if input_fbx.exists():
         results = process_azure_bones(input_fbx, input_fbx)
         print(json.dumps(results, indent=2))

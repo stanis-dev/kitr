@@ -490,9 +490,10 @@ if __name__ == "__main__":
 
     # Check multiple possible locations for the input file
     possible_paths = [
-        "../azure_optimized.fbx",  # Current location
-        "azure_optimized.fbx",     # Pipeline location
-        "../step2_morphs/azure_optimized.fbx"  # Original step2 location
+        "../output/step2/azure_optimized.fbx",  # New organized location
+        "output/step2/azure_optimized.fbx",     # When run from root
+        "../azure_optimized.fbx",  # Legacy location (fallback)
+        "azure_optimized.fbx"      # Legacy location (fallback)
     ]
 
     input_path = None
@@ -509,9 +510,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Determine correct output directory
-    # Always put GLB in step3_glb directory regardless of where script is run from
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # step3_glb directory
-    output_dir = script_dir  # Always output to step3_glb directory
+    # Always put GLB in output/step3 directory regardless of where script is run from
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Project root
+    output_dir = os.path.join(project_root, "output", "step3")  # Always output to output/step3
 
     print(f"Using input file: {input_path}")
     print(f"Output directory: {output_dir}")

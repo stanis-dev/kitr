@@ -441,8 +441,8 @@ def main():
     print("=" * 60)
 
     # Configuration
-    glb_path = Path("step3_glb/azure_optimized_web.glb")
-    output_dir = Path("step4_render/output")
+    glb_path = Path("output/step3/azure_optimized_web.glb")
+    output_dir = Path("output/step4")
     frames = 120
 
     print(f"📁 Input GLB: {glb_path}")

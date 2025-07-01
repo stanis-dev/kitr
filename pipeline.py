@@ -118,11 +118,11 @@ def show_pipeline_summary():
     print("├─ Step 1: FBX Validation")
     print("│   └─ Output: validation report only")
     print("├─ Step 2: Azure FBX Optimization")
-    print("│   └─ Output: azure_optimized.fbx")
+    print("│   └─ Output: output/step2/azure_optimized.fbx")
     print("├─ Step 3: FBX to GLB Conversion")
-    print("│   └─ Output: step3_glb/azure_optimized_web.glb")
+    print("│   └─ Output: output/step3/azure_optimized_web.glb")
     print("├─ Step 4: GLB Animation Validation")
-    print("│   └─ Output: step4_render/output/animation_validation_report.json + rendered frames")
+    print("│   └─ Output: output/step4/animation_validation_report.json + rendered frames")
     print("├─ Step 5: GLB Optimization [NOT IMPLEMENTED]")
     print("│   └─ Output: step5_optimize/optimized.glb")
     print("├─ Step 6: Texture Optimization [NOT IMPLEMENTED]")
@@ -144,9 +144,9 @@ def show_final_summary(steps_completed: int, total_time: float):
         print(f"📁 Input: {input_file.name} ({input_file.stat().st_size / (1024*1024):.1f}MB) - PRESERVED")
 
     output_files = [
-        "azure_optimized.fbx",
-        "step3_glb/azure_optimized_web.glb",
-        "step4_render/output/animation_validation_report.json",
+        "output/step2/azure_optimized.fbx",
+        "output/step3/azure_optimized_web.glb",
+        "output/step4/animation_validation_report.json",
         "step5_optimize/optimized.glb",
         "step6_textures/output-step6-optimized.glb",
         "step7_final/output-final-avatar.glb"

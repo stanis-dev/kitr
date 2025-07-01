@@ -43,8 +43,8 @@ def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:
     print()
 
     # Output file paths
-    mapped_fbx = Path("output-step2-azure-mapped.fbx")
-    clean_fbx = Path("azure_optimized.fbx")
+    mapped_fbx = Path("output/step2/azure_mapped.fbx")
+    clean_fbx = Path("output/step2/azure_optimized.fbx")
 
     results = {
         "success": False,

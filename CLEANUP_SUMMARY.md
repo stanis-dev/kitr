@@ -45,7 +45,10 @@ kitr/
 ├── README.md                          # Clean, accurate documentation
 ├── pipeline.py                        # Main orchestrator
 ├── input-file.fbx                     # Input file
-├── azure_optimized.fbx                # Step 2 output
+├── output/                            # Generated artifacts (organized & excluded from git)
+│   ├── step2/azure_optimized.fbx    # Azure optimization output
+│   ├── step3/azure_optimized_web.glb # GLB conversion output
+│   └── step4/                       # Animation validation outputs
 ├── PROJECT_PREFERENCES.md             # Essential preferences only
 ├── requirements.txt                   # Dependencies
 │

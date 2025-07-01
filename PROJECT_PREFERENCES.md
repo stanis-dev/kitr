@@ -16,7 +16,10 @@ This project follows a **fail-fast, zero-fallback** approach with deterministic 
 kitr/
 ├── pipeline.py                        # Main orchestrator
 ├── input-file.fbx                     # Input file (hardcoded name)
-├── azure_optimized.fbx                # Output from step 2
+├── output/                            # Generated artifacts (excluded from git)
+│   ├── step2/azure_optimized.fbx    # Azure optimization output
+│   ├── step3/azure_optimized_web.glb # GLB conversion output
+│   └── step4/                       # Animation validation outputs
 ├── requirements.txt                   # Dependencies
 │
 ├── step1_validation/                  # Validation logic
@@ -40,7 +43,7 @@ kitr/
 
 ### File Immutability
 Each step produces new output files while preserving the original input:
-- `input-file.fbx` → `azure_optimized.fbx` → `step3_glb/azure_optimized_web.glb`
+- `input-file.fbx` → `output/step2/azure_optimized.fbx` → `output/step3/azure_optimized_web.glb`
 
 ## IDE Configuration
 

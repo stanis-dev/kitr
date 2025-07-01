@@ -14,10 +14,10 @@ This step loads the GLB file from Step 3 and performs comprehensive animation te
 
 ## Input/Output
 
-**Input**: `step3_glb/azure_optimized_web.glb` (37MB GLB from Step 3)
+**Input**: `output/step3/azure_optimized_web.glb` (37MB GLB from Step 3)
 **Output**:
-- `step4_render/output/morph_test_frame_XXX.png` (5 rendered frames)
-- `step4_render/output/animation_validation_report.json` (validation report)
+- `output/step4/morph_test_frame_XXX.png` (5 rendered frames)
+- `output/step4/animation_validation_report.json` (validation report)
 
 ## Usage
 
