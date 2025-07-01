@@ -25,12 +25,14 @@ kitr/
 ├── pipeline.py                        # Main pipeline orchestrator
 ├── requirements.txt                   # Python dependencies
 │
-├── docs/                              # 📚 Complete Documentation
-│   ├── README.md                      # Documentation overview
-│   ├── step2_success_summary.md       # ⭐ MAIN SUCCESS REPORT
+├── docs/                              # 🐍 Python Modules with IDE Support
+│   ├── README.md                      # Python-based architecture overview
+│   ├── azure_blendshapes_complete.py  # ⭐ Azure parameters with helper functions
+│   ├── metahuman_to_azure_mappings.py # MetaHuman→Azure mappings (110) with utilities
+│   ├── validation_requirements.py    # Validation specs with validation functions
+│   ├── original_fbx_morph_targets_complete.json   # Original 823 morph documentation
+│   ├── step2_success_summary.md       # Success report
 │   ├── step2_cleanup_success.md       # Cleanup & validation details
-│   ├── azure_blendshapes_complete.json   # Complete Azure parameter list
-│   ├── original_fbx_morph_targets.json   # Original 823 morph documentation
 │   └── morph_targets_comparison.txt   # Analysis comparison
 │
 ├── step1_validation/                  # 🔍 Validation & Constants
@@ -182,11 +184,13 @@ python validate_clean_fbx.py
 ## 📚 Documentation
 
 ### Complete Documentation Available:
-- **`docs/step2_success_summary.md`** - ⭐ **MAIN SUCCESS REPORT**
+- **`docs/azure_blendshapes_complete.py`** - ⭐ **Azure parameters with IDE support & helper functions**
+- **`docs/README.md`** - Python-based architecture overview with IDE benefits
+- **`docs/metahuman_to_azure_mappings.py`** - MetaHuman→Azure mappings (110) with utilities
+- **`docs/validation_requirements.py`** - Validation specs with validation functions
+- **`docs/original_fbx_morph_targets_complete.json`** - Original 823 morphs
+- **`docs/step2_success_summary.md`** - Success report
 - **`docs/step2_cleanup_success.md`** - Cleanup process details
-- **`docs/azure_blendshapes_complete.json`** - All Azure parameters
-- **`docs/original_fbx_morph_targets.json`** - Original 823 morphs
-- **`docs/README.md`** - Documentation overview
 
 ### Processing Reports:
 - Real-time processing logs with detailed statistics

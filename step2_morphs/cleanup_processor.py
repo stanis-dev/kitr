@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
 """
-Cleanup Processor for Azure FBX Optimization
-
-This module creates web-optimized FBX by keeping ONLY Azure blendshapes.
-Optimizes for maximum web performance and minimal file size.
-
-Final output will contain:
-- ONLY 52 Azure blendshapes (optimal for web deployment)
-- Essential bones for Azure rotations
-- Collision meshes removed
-- Maximum web performance optimization
+FBX cleanup processor for Azure optimization.
+Removes non-Azure morph targets while preserving essential structure.
 """
 
 import subprocess
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any, List
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import AZURE_BLENDSHAPES, AZURE_ROTATIONS
+# Direct imports from docs package for better type inference
+from docs import FACIAL_BLENDSHAPES, ROTATION_PARAMETERS
+
+# Backwards compatibility
+AZURE_BLENDSHAPES = FACIAL_BLENDSHAPES
+AZURE_ROTATIONS = ROTATION_PARAMETERS
 
 
 def create_azure_cleanup_script(input_fbx: Path, output_fbx: Path, azure_blendshapes: List[str], essential_bones: List[str]) -> str:
@@ -224,11 +221,11 @@ def cleanup_azure_fbx(input_fbx: Path, output_fbx: Path) -> Dict[str, Any]:
     print()
 
     # Create essential bones list (for reporting only, not removal)
-    essential_bones = list(AZURE_ROTATIONS)
+    essential_bones = [str(bone) for bone in AZURE_ROTATIONS]
 
     # Create and run Blender cleanup script
     blender_script = create_azure_cleanup_script(
-        input_fbx, output_fbx, list(AZURE_BLENDSHAPES), essential_bones
+        input_fbx, output_fbx, [str(name) for name in AZURE_BLENDSHAPES], essential_bones
     )
 
     script_file = output_fbx.with_suffix('.cleanup_script.py')

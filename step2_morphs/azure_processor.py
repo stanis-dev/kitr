@@ -6,19 +6,24 @@ This module provides complete processing of MetaHuman FBX files for Azure compat
 including blendshape mapping, bone analysis, cleanup, and validation.
 """
 
-import json
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import AZURE_BLENDSHAPES, AZURE_ROTATIONS
-from morph_processor import process_azure_blendshapes
-from bone_processor import process_azure_bones
-from cleanup_processor import cleanup_azure_fbx
-from validate_clean_fbx import validate_azure_clean_fbx
+# Direct imports from docs package for better type inference
+from docs import FACIAL_BLENDSHAPES, ROTATION_PARAMETERS, AzureBlendshapeName, AzureRotationName
+
+from .morph_processor import process_azure_blendshapes
+from .bone_processor import process_azure_bones
+from .cleanup_processor import cleanup_azure_fbx
+from .validate_clean_fbx import validate_azure_clean_fbx
+
+# Use the strongly-typed constants
+AZURE_BLENDSHAPES: List[AzureBlendshapeName] = FACIAL_BLENDSHAPES
+AZURE_ROTATIONS: List[AzureRotationName] = ROTATION_PARAMETERS
 
 
 def process_azure_optimization(input_fbx: Path) -> Dict[str, Any]:

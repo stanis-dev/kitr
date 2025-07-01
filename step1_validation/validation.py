@@ -11,8 +11,18 @@ import shutil
 from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass, field
+import sys
 
-from .constants import AZURE_BLENDSHAPES, METAHUMAN_NAME_MAPPINGS
+# Add parent directory to path for imports
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
+
+# Direct imports from docs package for better type inference
+from docs import FACIAL_BLENDSHAPES, METAHUMAN_NAME_MAPPINGS
+
+# Backwards compatibility
+AZURE_BLENDSHAPES = FACIAL_BLENDSHAPES
+
 from .logging_config import logger
 
 

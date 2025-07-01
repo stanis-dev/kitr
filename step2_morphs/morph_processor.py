@@ -14,7 +14,12 @@ from typing import Any
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import AZURE_BLENDSHAPES, METAHUMAN_NAME_MAPPINGS
+# Direct imports from docs package for better type inference
+from docs import FACIAL_BLENDSHAPES, METAHUMAN_NAME_MAPPINGS
+
+# Backwards compatibility
+AZURE_BLENDSHAPES = FACIAL_BLENDSHAPES
+
 from step1_validation.logging_config import logger
 
 

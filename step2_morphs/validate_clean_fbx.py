@@ -19,7 +19,12 @@ from typing import Dict, Any
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import AZURE_BLENDSHAPES, AZURE_ROTATIONS
+# Direct imports from docs package for better type inference
+from docs import FACIAL_BLENDSHAPES, ROTATION_PARAMETERS
+
+# Backwards compatibility
+AZURE_BLENDSHAPES = FACIAL_BLENDSHAPES
+AZURE_ROTATIONS = ROTATION_PARAMETERS
 
 
 def validate_azure_clean_fbx(fbx_file: Path) -> Dict[str, Any]:

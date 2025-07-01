@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Azure Bone Processing Module.
-
-Handles bone structure analysis and verification for Azure rotation compatibility.
+FBX bone processor for Azure rotation parameters.
+Analyzes and validates bone structure for Azure compatibility.
 """
 
 import subprocess
@@ -14,7 +13,11 @@ from typing import Dict, Any
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from step1_validation.constants import AZURE_ROTATIONS
+# Direct imports from docs package for better type inference
+from docs import ROTATION_PARAMETERS
+
+# Backwards compatibility
+AZURE_ROTATIONS = ROTATION_PARAMETERS
 
 
 def extract_bone_structure(input_fbx: Path) -> Dict[str, Any]:
