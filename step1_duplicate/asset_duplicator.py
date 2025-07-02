@@ -504,6 +504,52 @@ def select_metahuman_character(available_characters: List[Dict[str, Any]], defau
 
 
 def main(metahuman_project_path: Optional[str] = None) -> Optional[str]:
+    """
+    LEGACY MAIN - Replaced by comprehensive validation system.
+    This is kept for compatibility but now uses the new comprehensive validator.
+    """
+    from step1_duplicate.comprehensive_validator import ComprehensiveProjectValidator
+
+    logger.info("🎭 Step 1: COMPREHENSIVE MetaHuman Project Validation")
+    logger.info("=" * 60)
+    logger.info("Using new 10-step validation roadmap")
+
+    # Determine project path
+    if metahuman_project_path:
+        project_path = metahuman_project_path
+        logger.info(f"📁 Using provided project: {project_path}")
+    else:
+        # Use default test project path (update this to your test project)
+        default_project = "/Users/stanislav.samisko/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
+        project_path = default_project
+        logger.info(f"📁 Using default test project: {project_path}")
+
+    # Execute comprehensive validation
+    validator = ComprehensiveProjectValidator()
+
+    try:
+        checkpoint = validator.execute_comprehensive_validation(project_path)
+
+        if checkpoint.success:
+            logger.info("✅ Comprehensive Step 1 validation completed successfully")
+            logger.info(f"🎯 Ready characters: {checkpoint.healthy_characters}")
+            logger.info(f"📁 Checkpoint: artifacts/step1_checkpoint.json")
+            logger.info(f"📄 Report: artifacts/metahuman_readiness_report.md")
+
+            # Return the project path for pipeline continuation
+            return checkpoint.project_path
+
+        else:
+            logger.error("❌ Comprehensive Step 1 validation failed")
+            logger.error(f"🚫 Error: {checkpoint.error}")
+            return None
+
+    except Exception as e:
+        logger.error(f"❌ Comprehensive validation exception: {e}")
+        return None
+
+
+def main_legacy(metahuman_project_path: Optional[str] = None) -> Optional[str]:
     """Main entry point for Step 1: Asset Duplication with Character Selection."""
     logger.info("🎭 Step 1: Duplicate & Prepare MetaHuman Character")
     logger.info("=" * 60)
