@@ -38,7 +38,7 @@ kitr/
 │   ├── __init__.py
 │   └── core.py
 │
-├── step1_duplicate/                   # 🔄 Duplicate & Prepare Asset
+├── step1_ingest/                      # 🔄 Ingest & Prepare Asset
 │   ├── __init__.py
 │   └── asset_duplicator.py           # MetaHuman asset duplication + morph prep
 │

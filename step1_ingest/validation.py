@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 """
-Step 1 Validation Models
+Step 1: Ingest Validation
 
-Data structures and models for the Step 1 validation plan.
-Each model represents the output of a specific validation task.
+Validation functions and data models for the asset ingestion step.
+Consolidates all typing and validation logic in one place.
 """
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Generic, TypeVar
-import json
+from typing import Dict, Any, List, Optional, Generic, TypeVar
+from logger.core import get_logger
 
+logger = get_logger(__name__)
+
+# =============================================================================
+# EXCEPTIONS
+# =============================================================================
+
+class ValidationError(Exception):
+    """Custom exception for validation failures."""
+    pass
+
+# =============================================================================
+# DATA MODELS
+# =============================================================================
 
 @dataclass
 class ProjectPathInfo:
@@ -92,7 +106,7 @@ class MetaHumanAsset:
 
 
 @dataclass
-class Step1Checkpoint:
+class IngestCheckpoint:
     """Output of sub-task 1.10: Emit Step-1 Checkpoint"""
     success: bool
     project_path: str
@@ -173,12 +187,15 @@ class EngineVersion:
         patch = int(parts[2]) if len(parts) > 2 else 0
         return cls(major, minor, patch)
 
+# =============================================================================
+# CONSTANTS
+# =============================================================================
 
 # Required MetaHuman plugins for validation (UE 5.6 structure)
 REQUIRED_METAHUMAN_PLUGINS = [
     "MetaHumanCharacter",  # Core MetaHuman character system
     "MetaHumanSDK",        # MetaHuman SDK for export/import
-    "MetaHumanCoreTech"    # Core technology library (actual file name)
+    "MetaHumanCoreTech"    # Core technology library
 ]
 
 # Minimum requirements for healthy MetaHuman
@@ -191,3 +208,65 @@ UE_PYTHON_COMMANDS = {
     "project_ping": "ProjectPing.py",
     "asset_registry": "unreal.AssetRegistryHelpers.get_asset_registry()"
 }
+
+# =============================================================================
+# VALIDATION FUNCTIONS
+# =============================================================================
+
+def validate_ingest_output(output_path: Path, config: Dict[str, Any]) -> bool:
+    """Validate asset ingest output."""
+    logger.info("🔍 Validating ingest output")
+
+    if not output_path.is_dir():
+        raise ValidationError("Ingest output must be a directory")
+
+    # Check for essential files
+    required_files = [
+        f"{config.get('project_name', 'project')}.uproject",
+        "character_selection_manifest.json"
+    ]
+
+    required_dirs = ["Config", "Content"]
+
+    for file_name in required_files:
+        if not (output_path / file_name).exists():
+            raise ValidationError(f"Missing required file: {file_name}")
+
+    for dir_name in required_dirs:
+        if not (output_path / dir_name).exists():
+            raise ValidationError(f"Missing required directory: {dir_name}")
+
+    logger.info("   ✅ Ingest output validation passed")
+    return True
+
+
+def validate_step_input(input_path: Path, expected_type: str) -> bool:
+    """
+    Validate input for asset ingest step.
+
+    Args:
+        input_path: Path to input file/directory
+        expected_type: Expected type ('project', 'directory')
+
+    Returns:
+        True if validation passes
+
+    Raises:
+        ValidationError: If validation fails
+    """
+    logger.info("🔍 Validating ingest input")
+
+    if not input_path.exists():
+        raise ValidationError(f"Input does not exist: {input_path}")
+
+    if expected_type == 'directory' and not input_path.is_dir():
+        raise ValidationError(f"Expected directory, got file: {input_path}")
+
+    if expected_type == 'project':
+        if not input_path.suffix == '.uproject':
+            raise ValidationError(f"Expected .uproject file: {input_path}")
+        if not input_path.is_file():
+            raise ValidationError(f"Project file does not exist: {input_path}")
+
+    logger.info("   ✅ Input validation passed for asset ingest")
+    return True

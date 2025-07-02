@@ -20,7 +20,7 @@ from typing import Optional
 from logger.core import get_logger
 
 # Import our implemented steps
-from step1_duplicate.asset_duplicator import main as step1_main
+from step1_ingest.ingestor import main as step1_main
 from step2_dcc_export.dcc_assembler import main as step2_main
 from step3_fbx_export.fbx_exporter import main as step3_main
 from step4_glb_convert.blender_converter import main as step4_main

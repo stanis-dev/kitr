@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Step 1: Project Validator
+Step 1: MetaHuman Asset Ingestor
 
-Implements the 10-step micro-roadmap for MetaHuman project validation.
-Each sub-task is atomic, testable, and has clear success/failure criteria.
+Complete implementation of MetaHuman project validation and asset preparation.
+Consolidates all ingestion logic into a single, DRY implementation.
 """
 
 import json
@@ -12,32 +12,29 @@ from typing import List, Optional
 import datetime
 
 from logger.core import get_logger
-from step1_duplicate.validation_models import (
+from step1_ingest.validation import (
     ProjectPathInfo, PluginStatus, MetaHumanHealthReport, SessionToken,
-    MetaHumanAsset, Step1Checkpoint, ValidationResult, EngineVersion,
+    MetaHumanAsset, IngestCheckpoint, ValidationResult, EngineVersion,
     REQUIRED_METAHUMAN_PLUGINS
 )
 
 logger = get_logger(__name__)
 
 
-class ProjectValidator:
+class AssetIngestor:
     """
-    Project validator implementing the 10-step validation roadmap.
+    Asset ingestor implementing the 10-step validation roadmap.
     Each method corresponds to one atomic sub-task with clear input/output.
     """
 
     def __init__(self, artifacts_base_dir: str = "artifacts"):
-        """Initialize the project validator."""
+        """Initialize the asset ingestor."""
         project_root = Path(__file__).parent.parent
         self.artifacts_base = project_root / artifacts_base_dir
         self.session_token: Optional[SessionToken] = None
         self.checkpoint_data: dict = {}
 
-    # ========================================
-    # Locate Project
-    # ========================================
-    def locate_project(self, uproj_path: str) -> ValidationResult:
+    def locate_project(self, uproj_path: str) -> ValidationResult[ProjectPathInfo]:
         """
         Resolve user-supplied string into validated .uproject file.
 
@@ -78,16 +75,12 @@ class ProjectValidator:
             )
 
             logger.info("   ✅ Project located")
-
             return ValidationResult.success_result(project_info)
 
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to locate project: {e}")
 
-    # ========================================
-    # Read Engine Version
-    # ========================================
-    def read_engine_version(self, project_info: ProjectPathInfo) -> ValidationResult:
+    def read_engine_version(self, project_info: ProjectPathInfo) -> ValidationResult[EngineVersion]:
         """
         Extract and validate engine version from .uproject.
 
@@ -132,25 +125,15 @@ class ProjectValidator:
                 )
 
             logger.info(f"   ✅ Engine version: {engine_version}")
-
             return ValidationResult.success_result(engine_version)
 
         except FileNotFoundError:
-            return ValidationResult.failure_result(
-                "Project file not found"
-            )
+            return ValidationResult.failure_result("Project file not found")
         except json.JSONDecodeError as e:
-            return ValidationResult.failure_result(
-                f"Invalid JSON in .uproject file: {e}"
-            )
+            return ValidationResult.failure_result(f"Invalid JSON in .uproject file: {e}")
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to read engine version: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to read engine version: {e}")
 
-    # ========================================
-    # Check MetaHuman Plugins
-    # ========================================
     def check_metahuman_plugins(self, project_info: ProjectPathInfo) -> ValidationResult[List[PluginStatus]]:
         """
         Verify required MetaHuman plugins are available in UE installation.
@@ -181,7 +164,7 @@ class ProjectValidator:
                     f"Could not locate UE {engine_association} installation"
                 )
 
-                        # Check for MetaHuman plugins in engine installation
+            # Check for MetaHuman plugins in engine installation
             engine_plugins_path = ue_install_path / "Engine" / "Plugins"
 
             # MetaHuman plugins are in the MetaHuman subdirectory in UE 5.6
@@ -207,7 +190,7 @@ class ProjectValidator:
                     plugin_folder = search_path / plugin_name
                     plugin_file = plugin_folder / f"{plugin_name}.uplugin"
 
-                                        # Also try common variations of the plugin name
+                    # Also try common variations of the plugin name
                     alt_names = [
                         plugin_name.replace(" ", ""),  # Remove spaces
                         plugin_name.replace(" ", "_"), # Replace spaces with underscores
@@ -303,9 +286,6 @@ class ProjectValidator:
 
         return None
 
-    # ========================================
-    # Open Project Headless
-    # ========================================
     def open_project_headless(self, project_info: ProjectPathInfo) -> ValidationResult[SessionToken]:
         """
         Launch UE5.6 in headless mode to validate project.
@@ -350,17 +330,11 @@ class ProjectValidator:
             self.session_token = session_token
 
             logger.info("   ✅ Project opened successfully")
-
             return ValidationResult.success_result(session_token)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to open project headless: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to open project headless: {e}")
 
-    # ========================================
-    # Enumerate MetaHumans
-    # ========================================
     def enumerate_metahumans(self, session_token: SessionToken) -> ValidationResult[List[MetaHumanAsset]]:
         """
         Find actual MetaHuman character assets in the project.
@@ -461,9 +435,7 @@ class ProjectValidator:
             return ValidationResult.success_result(metahuman_assets)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to enumerate MetaHumans: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to enumerate MetaHumans: {e}")
 
     def _looks_like_character_blueprint(self, bp_file: Path) -> bool:
         """Check if a Blueprint file looks like a character (not a system component)."""
@@ -486,9 +458,6 @@ class ProjectValidator:
         except Exception:
             return False
 
-    # ========================================
-    # Quick-Health Check
-    # ========================================
     def quick_health_check(self, metahuman_assets: List[MetaHumanAsset]) -> ValidationResult[List[MetaHumanHealthReport]]:
         """
         Perform health check on each MetaHuman asset.
@@ -539,20 +508,13 @@ class ProjectValidator:
             healthy_count = sum(1 for report in health_reports if report.is_healthy())
 
             if healthy_count == 0:
-                return ValidationResult.failure_result(
-                    "No healthy MetaHuman assets found"
-                )
+                return ValidationResult.failure_result("No healthy MetaHuman assets found")
 
             return ValidationResult.success_result(health_reports)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to perform health check: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to perform health check: {e}")
 
-    # ========================================
-    # Artist-Facing Readiness Report
-    # ========================================
     def generate_readiness_report(self, health_reports: List[MetaHumanHealthReport]) -> ValidationResult[str]:
         """
         Generate artist-facing readiness report.
@@ -629,18 +591,12 @@ class ProjectValidator:
             report_content = "\n".join(report_lines)
 
             logger.info("   ✅ Readiness report generated")
-
             return ValidationResult.success_result(report_content)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to generate readiness report: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to generate readiness report: {e}")
 
-    # ========================================
-    # Duplicate Working Copy
-    # ========================================
-    def duplicate_working_copy(self, healthy_reports: List[MetaHumanHealthReport]) -> ValidationResult[List[str]]:
+    def create_working_copy(self, healthy_reports: List[MetaHumanHealthReport]) -> ValidationResult[List[str]]:
         """
         Create temporary working copies of healthy MetaHumans.
 
@@ -666,23 +622,16 @@ class ProjectValidator:
                 # For simulation: record the temp path
                 temp_asset_paths.append(temp_path)
 
-                logger.info(f"   ✅ Duplicate created")
+                logger.info(f"   ✅ Working copy created")
 
             if not temp_asset_paths:
-                return ValidationResult.failure_result(
-                    "No healthy MetaHumans to duplicate"
-                )
+                return ValidationResult.failure_result("No healthy MetaHumans to create working copies for")
 
             return ValidationResult.success_result(temp_asset_paths)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to duplicate working copies: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to create working copies: {e}")
 
-    # ========================================
-    # Lock Original
-    # ========================================
     def lock_original_assets(self, original_reports: List[MetaHumanHealthReport]) -> ValidationResult[bool]:
         """
         Lock original assets to prevent accidental edits.
@@ -707,18 +656,12 @@ class ProjectValidator:
                 locked_count += 1
 
             logger.info(f"   ✅ Locked {locked_count} original assets")
-
             return ValidationResult.success_result(True)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to lock original assets: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to lock original assets: {e}")
 
-    # ========================================
-    # Emit Step-1 Checkpoint
-    # ========================================
-    def emit_step1_checkpoint(
+    def emit_checkpoint(
         self,
         project_info: ProjectPathInfo,
         engine_version: EngineVersion,
@@ -726,7 +669,7 @@ class ProjectValidator:
         health_reports: List[MetaHumanHealthReport],
         temp_asset_paths: List[str],
         readiness_report: str
-    ) -> ValidationResult[Step1Checkpoint]:
+    ) -> ValidationResult[IngestCheckpoint]:
         """
         Create final Step 1 checkpoint with all validation results.
 
@@ -739,7 +682,7 @@ class ProjectValidator:
             readiness_report: Generated readiness report
 
         Returns:
-            ValidationResult containing Step1Checkpoint
+            ValidationResult containing IngestCheckpoint
         """
         logger.info("🔍 Creating checkpoint")
 
@@ -749,7 +692,7 @@ class ProjectValidator:
             success = len(healthy_characters) > 0
 
             # Create checkpoint
-            checkpoint = Step1Checkpoint(
+            checkpoint = IngestCheckpoint(
                 success=success,
                 project_path=str(project_info.abs_root),
                 engine_version=str(engine_version),
@@ -784,14 +727,9 @@ class ProjectValidator:
             return ValidationResult.success_result(checkpoint)
 
         except Exception as e:
-            return ValidationResult.failure_result(
-                f"Failed to emit Step 1 checkpoint: {e}"
-            )
+            return ValidationResult.failure_result(f"Failed to emit checkpoint: {e}")
 
-    # ========================================
-    # Main Execution Method
-    # ========================================
-    def execute_validation(self, uproj_path: str) -> Step1Checkpoint:
+    def execute_ingestion(self, uproj_path: str) -> IngestCheckpoint:
         """
         Execute all 10 tasks in sequence for Step 1 validation.
 
@@ -799,13 +737,8 @@ class ProjectValidator:
             uproj_path: User-supplied project path
 
         Returns:
-            Step1Checkpoint with final validation results
-
-        Raises:
-            Exception: If any critical validation fails
+            IngestCheckpoint with final validation results
         """
-
-
         try:
             # 1.1: Locate Project
             project_result = self.locate_project(uproj_path)
@@ -849,10 +782,10 @@ class ProjectValidator:
                 raise Exception(f"1.7 failed: {report_result.error}")
             readiness_report = report_result.data
 
-            # 1.8: Duplicate Working Copy (only healthy ones)
+            # 1.8: Create Working Copy (only healthy ones)
             healthy_reports = [r for r in health_reports if r.is_healthy()]
             if healthy_reports:
-                duplicate_result = self.duplicate_working_copy(healthy_reports)
+                duplicate_result = self.create_working_copy(healthy_reports)
                 if not duplicate_result.success:
                     raise Exception(f"1.8 failed: {duplicate_result.error}")
                 temp_asset_paths = duplicate_result.data
@@ -863,10 +796,10 @@ class ProjectValidator:
                     logger.warning(f"1.9 warning: {lock_result.error}")
             else:
                 temp_asset_paths = []
-                logger.warning("No healthy MetaHumans to duplicate or lock")
+                logger.warning("No healthy MetaHumans to create working copies or lock")
 
-            # 1.10: Emit Step-1 Checkpoint
-            checkpoint_result = self.emit_step1_checkpoint(
+            # 1.10: Emit Checkpoint
+            checkpoint_result = self.emit_checkpoint(
                 project_info, engine_version, plugins, health_reports,
                 temp_asset_paths, readiness_report
             )
@@ -875,14 +808,13 @@ class ProjectValidator:
                 raise Exception(f"1.10 failed: {checkpoint_result.error}")
 
             checkpoint = checkpoint_result.data
-
             return checkpoint
 
         except Exception as e:
-            logger.error(f"❌ Step 1 validation failed: {e}")
+            logger.error(f"❌ Step 1 ingestion failed: {e}")
 
             # Create failure checkpoint
-            failure_checkpoint = Step1Checkpoint(
+            failure_checkpoint = IngestCheckpoint(
                 success=False,
                 project_path=uproj_path,
                 engine_version="unknown",
@@ -890,9 +822,63 @@ class ProjectValidator:
                 metahumans=[],
                 healthy_characters=[],
                 temp_asset_paths=[],
-                readiness_report="Validation failed",
+                readiness_report="Ingestion failed",
                 error=str(e),
                 timestamp=datetime.datetime.now().isoformat()
             )
 
             return failure_checkpoint
+
+
+def main(metahuman_project_path: Optional[str] = None) -> Optional[str]:
+    """
+    Main entry point for Step 1: MetaHuman Asset Ingestion.
+
+    This step performs the complete 10-step validation roadmap:
+    1.1 Locate Project
+    1.2 Read Engine Version
+    1.3 Check MetaHuman Plugins
+    1.4 Open Project Headless
+    1.5 Enumerate MetaHumans
+    1.6 Quick-Health Check
+    1.7 Artist-Facing Readiness Report
+    1.8 Create Working Copy
+    1.9 Lock Original
+    1.10 Emit Checkpoint
+
+    Args:
+        metahuman_project_path: Path to .uproject file. If None, uses default test project.
+
+    Returns:
+        Project path if ingestion succeeds, None if it fails
+    """
+    # Determine project path
+    if metahuman_project_path:
+        project_path = metahuman_project_path
+    else:
+        # Use default test project path
+        default_project = "/Users/stanislav.samisko/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
+        project_path = default_project
+
+    # Execute ingestion (the only ingestion path)
+    ingestor = AssetIngestor()
+
+    try:
+        checkpoint = ingestor.execute_ingestion(project_path)
+
+        if checkpoint.success:
+            logger.info("✅ Step 1 completed successfully")
+            # Return the project path for pipeline continuation
+            return checkpoint.project_path
+        else:
+            logger.error("❌ Step 1 ingestion failed")
+            logger.error(f"🚫 Error: {checkpoint.error}")
+            return None
+
+    except Exception as e:
+        logger.error(f"❌ Step 1 ingestion exception: {e}")
+        return None
+
+
+if __name__ == "__main__":
+    main()
