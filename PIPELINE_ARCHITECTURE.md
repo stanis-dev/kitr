@@ -1,11 +1,11 @@
-# New Pipeline Architecture - 5-Step Unreal Engine MetaHuman Export
+# MetaHuman to Web GLB Pipeline Architecture
 
-**Refactor Branch:** refactor-v2
-**Status:** 🚧 SKELETON PHASE - Structure Only
+**Branch:** refactor-v2
+**Status:** 🚧 SKELETON PHASE - Implementation Ready
 
 ## Pipeline Overview
 
-This new pipeline processes MetaHuman assets entirely within Unreal Engine, then exports optimized GLB files for web use. The approach leverages Epic's DCC Export assembly for deterministic, repeatable results.
+This pipeline processes MetaHuman assets entirely within Unreal Engine, then exports optimized GLB files for web use. The approach leverages Epic's DCC Export assembly for deterministic, repeatable results and industry-standard compatibility.
 
 ## 5-Step Architecture
 
@@ -90,21 +90,69 @@ Web-optimized GLB (final)
 
 ## Implementation Status
 
-- [x] Directory structure created
-- [x] Pipeline roadmap documented
-- [ ] Step 1: Asset duplication logic
-- [ ] Step 2: DCC Export integration
-- [ ] Step 3: FBX export automation
-- [ ] Step 4: Blender conversion pipeline
-- [ ] Step 5: gltf-transform optimization
-- [ ] Main pipeline orchestrator
-- [ ] Error handling and validation
-- [ ] Documentation and testing
+### Foundation Complete ✅
+- [x] **Directory structure created** - All 5 steps organized
+- [x] **Pipeline roadmap documented** - Complete architecture defined
+- [x] **Main pipeline orchestrator** - `pipeline.py` with comprehensive error handling
+- [x] **Prerequisites validation** - Blender, gltf-transform, script availability
+- [x] **Project documentation** - README.md, PROJECT_PREFERENCES.md updated
+- [x] **Original pipeline archived** - Complete backup in `archive_old_pipeline/`
 
-## Next Steps
+### Implementation Ready 🚧
+- [ ] **Step 1: Asset duplication logic** - Unreal Engine Python API integration
+- [ ] **Step 2: DCC Export integration** - MetaHumanCharacter.RunAssembly automation
+- [ ] **Step 3: FBX export automation** - Unreal Engine commandlet integration
+- [ ] **Step 4: Blender conversion pipeline** - Headless FBX→GLB automation
+- [ ] **Step 5: gltf-transform optimization** - Web delivery optimization
 
-1. Implement Step 1 asset duplication
-2. Set up Unreal Engine Python environment
-3. Create DCC Export integration
-4. Build Blender automation scripts
-5. Integrate gltf-transform optimization
+### Future Enhancements 🚀
+- [ ] **Configuration system** - Support multiple MetaHuman types
+- [ ] **Batch processing** - Multiple character automation
+- [ ] **Quality validation** - Automated testing at each step
+- [ ] **Performance metrics** - Optimization reporting
+- [ ] **CI/CD integration** - Automated build pipeline
+
+## Development Workflow
+
+### Primary Command
+```bash
+# Run complete pipeline
+python pipeline.py
+```
+
+### Individual Step Testing
+```bash
+# Test specific steps during development
+python step1_duplicate/asset_duplicator.py
+python step2_dcc_export/dcc_assembler.py
+python step3_fbx_export/fbx_exporter.py
+python step4_glb_convert/blender_converter.py
+python step5_web_optimize/web_optimizer.py
+```
+
+### Prerequisites Check
+```bash
+# Validate environment before implementation
+python -c "from pipeline import NewPipelineOrchestrator; NewPipelineOrchestrator({}).check_prerequisites()"
+```
+
+## Reference Original Pipeline
+
+### Access Archived Code
+```bash
+# Switch to complete backup
+git checkout pre-refactor-stable
+
+# View archived files locally
+cd archive_old_pipeline
+python old_pipeline.py
+
+# Reference perfect Azure optimization
+cat archive_old_pipeline/step2_morphs/azure_processor.py
+```
+
+### Reusable Components
+- **Azure mappings:** `docs/azure_blendshapes_complete.py`
+- **Validation patterns:** `archive_old_pipeline/step1_validation/validate.py`
+- **Morph cleanup logic:** `archive_old_pipeline/step2_morphs/cleanup_processor.py`
+- **Logger system:** `logger/core.py` (already preserved)
