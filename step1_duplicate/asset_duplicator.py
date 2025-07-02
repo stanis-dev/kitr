@@ -2,118 +2,182 @@
 """
 Step 1: Asset Duplicator
 
-Duplicates MetaHuman Character assets and prepares them for processing.
-Preserves original assets by working on temporary copies.
+Copies MetaHuman project files to artifacts folder for processing.
+Preserves original project by working on copies.
 """
 
+import os
 import sys
+import shutil
+from pathlib import Path
 from typing import Optional
+import datetime
 
-# TODO: Import Unreal Engine Python modules
-# import unreal
+from logger.core import get_logger
+
+logger = get_logger(__name__)
 
 
 class AssetDuplicator:
-    """Handles MetaHuman asset duplication and preparation."""
+    """Handles MetaHuman project copying and preparation."""
 
-    def __init__(self, source_asset_path: str, temp_package_name: str):
+    def __init__(self, source_project_path: str, artifacts_base_dir: str = "artifacts"):
         """
         Initialize the asset duplicator.
 
         Args:
-            source_asset_path: Path to original MetaHuman Character asset
-            temp_package_name: Name for temporary package
+            source_project_path: Path to the .uproject file
+            artifacts_base_dir: Base directory for artifacts (relative to project root)
         """
-        self.source_asset_path = source_asset_path
-        self.temp_package_name = temp_package_name
-        self.temp_asset_path: Optional[str] = None
+        self.source_project_path = Path(source_project_path)
+        self.source_project_dir = self.source_project_path.parent
+        self.project_name = self.source_project_path.stem
 
-    def duplicate_asset(self) -> bool:
+        # Set up artifacts directory structure
+        project_root = Path(__file__).parent.parent
+        self.artifacts_base = project_root / artifacts_base_dir
+
+        # Create timestamped copy directory
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.copy_dir = self.artifacts_base / f"{self.project_name}_{timestamp}"
+        self.copied_project_path: Optional[Path] = None
+
+    def create_project_copy(self) -> bool:
         """
-        Duplicate the MetaHuman Character asset to temporary package.
+        Copy the MetaHuman project to artifacts directory.
 
         Returns:
-            True if duplication successful, False otherwise
+            True if copy successful, False otherwise
         """
-        print(f"🔄 Duplicating asset: {self.source_asset_path}")
-        print(f"   → Target package: {self.temp_package_name}")
+        logger.info(f"📁 Copying project: {self.source_project_dir}")
+        logger.info(f"   → Target directory: {self.copy_dir}")
 
-        # TODO: Implement Unreal Engine asset duplication
-        # 1. Load source MetaHuman Character asset
-        # 2. Create temporary package
-        # 3. Duplicate asset to temp package
-        # 4. Validate duplication success
+        try:
+            # Ensure artifacts directory exists
+            self.artifacts_base.mkdir(exist_ok=True)
 
-        # Placeholder implementation
-        print("❌ TODO: Implement Unreal Engine asset duplication")
-        return False
+            # Validate source project exists
+            if not self.source_project_path.exists():
+                logger.error(f"Source project file not found: {self.source_project_path}")
+                return False
 
-    def prepare_morph_targets(self) -> bool:
+            if not self.source_project_dir.exists():
+                logger.error(f"Source project directory not found: {self.source_project_dir}")
+                return False
+
+            # Copy the entire project directory
+            logger.info("🔄 Copying project files...")
+            shutil.copytree(
+                str(self.source_project_dir),
+                str(self.copy_dir),
+                dirs_exist_ok=False
+            )
+
+            # Set the copied project path
+            self.copied_project_path = self.copy_dir / self.source_project_path.name
+
+            logger.info(f"✅ Project copied successfully")
+            logger.info(f"   Copied project file: {self.copied_project_path}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Failed to copy project: {e}")
+            return False
+
+    def validate_copy(self) -> bool:
         """
-        Prepare morph targets for Azure compatibility.
-        Reduce to 52 Azure-compatible morphs.
-
-        Returns:
-            True if preparation successful, False otherwise
-        """
-        print("🎭 Preparing morph targets for Azure compatibility")
-
-        # TODO: Implement morph target preparation
-        # 1. Analyze current morph targets
-        # 2. Identify Azure-compatible morphs
-        # 3. Remove non-Azure morphs
-        # 4. Validate 52 target count
-
-        # Placeholder implementation
-        print("❌ TODO: Implement morph target preparation")
-        return False
-
-    def validate_prepared_asset(self) -> bool:
-        """
-        Validate the prepared asset meets requirements.
+        Validate the copied project structure.
 
         Returns:
             True if validation passes, False otherwise
         """
-        print("✅ Validating prepared asset")
+        logger.info("🔍 Validating copied project")
 
-        # TODO: Implement validation
-        # 1. Check temp asset exists
-        # 2. Verify morph target count (52)
-        # 3. Validate asset structure
-        # 4. Confirm Azure compatibility
+        try:
+            if not self.copied_project_path or not self.copied_project_path.exists():
+                logger.error("Copied project file not found")
+                return False
 
-        # Placeholder implementation
-        print("❌ TODO: Implement asset validation")
-        return False
+                        # Check for essential directories/files
+            expected_items = [
+                "Content",
+                "Config",
+                self.source_project_path.name  # .uproject file
+            ]
+
+            missing_items: list[str] = []
+            for item in expected_items:
+                item_path = self.copy_dir / item
+                if not item_path.exists():
+                    missing_items.append(item)
+
+            if missing_items:
+                logger.error(f"Missing essential items in copy: {missing_items}")
+                return False
+
+            # Log copy statistics
+            original_size = self._get_directory_size(self.source_project_dir)
+            copy_size = self._get_directory_size(self.copy_dir)
+
+            logger.info(f"📊 Copy validation:")
+            logger.info(f"   Original size: {original_size / (1024*1024):.1f} MB")
+            logger.info(f"   Copy size: {copy_size / (1024*1024):.1f} MB")
+            logger.info(f"   Size match: {original_size == copy_size}")
+
+            logger.info("✅ Copy validation passed")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Copy validation failed: {e}")
+            return False
+
+    def _get_directory_size(self, directory: Path) -> int:
+        """Get total size of directory in bytes."""
+        total_size = 0
+        try:
+            for dirpath, _, filenames in os.walk(directory):
+                for filename in filenames:
+                    file_path = Path(dirpath) / filename
+                    if file_path.exists():
+                        total_size += file_path.stat().st_size
+        except Exception as e:
+            logger.warning(f"Error calculating directory size: {e}")
+        return total_size
+
+    def get_copied_project_path(self) -> Optional[Path]:
+        """Get path to the copied project file."""
+        return self.copied_project_path
 
 
 def main():
     """Main entry point for Step 1: Asset Duplication."""
-    print("🎭 Step 1: Duplicate & Prepare Asset")
-    print("=" * 50)
+    logger.info("🎭 Step 1: Duplicate Project")
+    logger.info("=" * 50)
 
-    # TODO: Parse command line arguments or configuration
-    source_asset = "/Game/MetaHumans/YourCharacter/BP_YourCharacter"  # Placeholder
-    temp_package = "Temp_MetaHuman_Processing"
+    # Development path - will be parameterized in future
+    development_project_path = "/Users/stanislav.samisko/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
 
-    duplicator = AssetDuplicator(source_asset, temp_package)
+    # TODO: Parse command line arguments
+    # For now, use development path
+    source_project_path = development_project_path
+
+    duplicator = AssetDuplicator(source_project_path)
 
     # Execute duplication pipeline
-    if not duplicator.duplicate_asset():
-        print("❌ Asset duplication failed")
+    if not duplicator.create_project_copy():
+        logger.error("❌ Project copy failed")
         sys.exit(1)
 
-    if not duplicator.prepare_morph_targets():
-        print("❌ Morph target preparation failed")
+    if not duplicator.validate_copy():
+        logger.error("❌ Copy validation failed")
         sys.exit(1)
 
-    if not duplicator.validate_prepared_asset():
-        print("❌ Asset validation failed")
-        sys.exit(1)
+    copied_path = duplicator.get_copied_project_path()
+    logger.info("✅ Step 1 completed successfully")
+    logger.info(f"   Copied project: {copied_path}")
 
-    print("✅ Step 1 completed successfully")
-    print(f"   Prepared asset: {duplicator.temp_asset_path}")
+    return str(copied_path)
 
 
 if __name__ == "__main__":
