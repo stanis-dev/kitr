@@ -14,6 +14,8 @@ GLB files compatible with Azure Cognitive Services and Babylon.js.
 """
 
 import sys
+import shutil
+from pathlib import Path
 from typing import Optional
 from logger.core import get_logger
 
@@ -25,6 +27,48 @@ from step4_glb_convert.blender_converter import main as step4_main
 from step5_web_optimize.web_optimizer import main as step5_main
 
 logger = get_logger(__name__)
+
+
+def clean_artifacts_directory() -> bool:
+    """
+    Clean the artifacts directory to ensure a fresh workspace for each pipeline run.
+
+    Returns:
+        True if cleanup successful or directory didn't exist, False on error
+    """
+    try:
+        project_root = Path(__file__).parent
+        artifacts_dir = project_root / "artifacts"
+
+        if artifacts_dir.exists():
+            logger.info("🧹 Cleaning artifacts directory for fresh start")
+            logger.info(f"   Removing: {artifacts_dir}")
+
+            # Calculate directory size before removal for logging
+            total_size = 0
+            file_count = 0
+            try:
+                for item in artifacts_dir.rglob("*"):
+                    if item.is_file():
+                        total_size += item.stat().st_size
+                        file_count += 1
+            except Exception:
+                pass  # Don't fail cleanup if size calculation fails
+
+            # Remove the entire artifacts directory
+            shutil.rmtree(artifacts_dir)
+
+            logger.info(f"   ✅ Cleaned {file_count} files ({total_size / (1024*1024):.1f} MB)")
+            logger.info("   📁 Fresh workspace ready")
+        else:
+            logger.info("📁 Artifacts directory doesn't exist - starting with clean workspace")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ Failed to clean artifacts directory: {e}")
+        logger.warning("⚠️  Continuing with existing artifacts (may cause issues)")
+        return False
 
 
 def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
@@ -43,6 +87,12 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
     logger.info("")
 
     try:
+        # Clean artifacts directory for fresh start
+        if not clean_artifacts_directory():
+            logger.warning("⚠️  Artifacts cleanup failed, continuing anyway...")
+
+        logger.info("")
+
         # Step 1: Duplicate & Prepare Asset
         logger.info("🔄 STEP 1: Duplicate & Prepare Asset")
         logger.info("-" * 40)

@@ -447,14 +447,48 @@ if __name__ == "__main__":
 
     def _create_simulated_glb(self) -> None:
         """Create a simulated GLB file with realistic binary content."""
-        # Read source FBX info
-        fbx_size = self.input_fbx_path.stat().st_size if self.input_fbx_path.exists() else 0
-
         # Create simulated GLB header and content
         glb_header = b'glTF'  # GLB magic number
         glb_version = (2).to_bytes(4, 'little')  # Version 2
 
-        # Create JSON chunk (simplified glTF JSON)
+        # Calculate proper buffer layout with alignment
+        vertex_count = 1000
+        index_count = 3000
+        morph_target_count = 52
+
+        # Calculate byte offsets for each data type (with proper alignment)
+        position_size = vertex_count * 3 * 4  # VEC3 * float32
+        normal_size = vertex_count * 3 * 4    # VEC3 * float32
+        texcoord_size = vertex_count * 2 * 4  # VEC2 * float32
+        joints_size = vertex_count * 4 * 1    # VEC4 * unsigned byte
+        weights_size = vertex_count * 4 * 4   # VEC4 * float32
+        indices_size = index_count * 2        # SCALAR * unsigned short
+
+                # Align to 4-byte boundaries
+        def align_to_4(size: int) -> int:
+            return ((size + 3) // 4) * 4
+
+        position_offset = 0
+        normal_offset = align_to_4(position_offset + position_size)
+        texcoord_offset = align_to_4(normal_offset + normal_size)
+        joints_offset = align_to_4(texcoord_offset + texcoord_size)
+        weights_offset = align_to_4(joints_offset + joints_size)
+        indices_offset = align_to_4(weights_offset + weights_size)
+
+        # Morph target offsets
+        morph_offsets: list[int] = []
+        current_offset = align_to_4(indices_offset + indices_size)
+        for i in range(morph_target_count):
+            morph_offsets.append(current_offset)
+            current_offset = align_to_4(current_offset + position_size)  # Each morph target is VEC3 positions
+
+        # Inverse bind matrices offset
+        ibm_offset = current_offset
+        ibm_size = 1 * 16 * 4  # 1 matrix * 16 floats * 4 bytes
+
+        total_buffer_size = align_to_4(ibm_offset + ibm_size)
+
+        # Create JSON chunk (properly structured glTF JSON)
         gltf_json = {
             "asset": {
                 "version": "2.0",
@@ -462,23 +496,59 @@ if __name__ == "__main__":
                 "copyright": "MetaHuman Pipeline Export"
             },
             "scene": 0,
-            "scenes": [{"nodes": [0]}],
-            "nodes": [{"mesh": 0, "skin": 0}],
+            "scenes": [{"nodes": [0, 1]}],  # Include both mesh and armature nodes
+            "nodes": [
+                {"mesh": 0, "skin": 0, "name": "MetaHuman_Mesh"},
+                {"children": [2], "name": "Armature"},
+                {"name": "Root_Bone"}
+            ],
             "meshes": [{
                 "name": self.input_fbx_name,
                 "primitives": [{
-                    "attributes": {"POSITION": 0, "NORMAL": 1, "TEXCOORD_0": 2},
-                    "indices": 3,
-                    "targets": [{"POSITION": i} for i in range(4, 56)]  # 52 morph targets
+                    "attributes": {
+                        "POSITION": 0,
+                        "NORMAL": 1,
+                        "TEXCOORD_0": 2,
+                        "JOINTS_0": 3,
+                        "WEIGHTS_0": 4
+                    },
+                    "indices": 5,
+                    "targets": [{"POSITION": i} for i in range(6, 6 + morph_target_count)]  # 52 morph targets
                 }]
             }],
-            "skins": [{"joints": [1], "skeleton": 1}],
-            "accessors": [{"componentType": 5126, "count": 1000, "type": "VEC3"}] * 56,
-            "bufferViews": [{"buffer": 0, "byteLength": 1000}] * 56,
-            "buffers": [{"byteLength": fbx_size // 2}],  # Realistic compression
+            "skins": [{
+                "joints": [2],  # Reference to the root bone node
+                "skeleton": 1,  # Reference to the armature node
+                "inverseBindMatrices": 6 + morph_target_count  # After all morph targets
+            }],
+            "accessors": [
+                {"componentType": 5126, "count": vertex_count, "type": "VEC3", "bufferView": 0, "min": [-1, -1, -1], "max": [1, 1, 1]},  # POSITION
+                {"componentType": 5126, "count": vertex_count, "type": "VEC3", "bufferView": 1},  # NORMAL
+                {"componentType": 5126, "count": vertex_count, "type": "VEC2", "bufferView": 2},  # TEXCOORD_0
+                {"componentType": 5121, "count": vertex_count, "type": "VEC4", "bufferView": 3},  # JOINTS_0
+                {"componentType": 5126, "count": vertex_count, "type": "VEC4", "bufferView": 4},  # WEIGHTS_0
+                {"componentType": 5123, "count": index_count, "type": "SCALAR", "bufferView": 5}  # indices
+            ] + [
+                {"componentType": 5126, "count": vertex_count, "type": "VEC3", "bufferView": i + 6} for i in range(morph_target_count)  # morph targets
+            ] + [
+                {"componentType": 5126, "count": 1, "type": "MAT4", "bufferView": 6 + morph_target_count}  # inverse bind matrices
+            ],
+            "bufferViews": [
+                {"buffer": 0, "byteOffset": position_offset, "byteLength": position_size},
+                {"buffer": 0, "byteOffset": normal_offset, "byteLength": normal_size},
+                {"buffer": 0, "byteOffset": texcoord_offset, "byteLength": texcoord_size},
+                {"buffer": 0, "byteOffset": joints_offset, "byteLength": joints_size},
+                {"buffer": 0, "byteOffset": weights_offset, "byteLength": weights_size},
+                {"buffer": 0, "byteOffset": indices_offset, "byteLength": indices_size}
+            ] + [
+                {"buffer": 0, "byteOffset": morph_offsets[i], "byteLength": position_size} for i in range(morph_target_count)
+            ] + [
+                {"buffer": 0, "byteOffset": ibm_offset, "byteLength": ibm_size}
+            ],
+            "buffers": [{"byteLength": total_buffer_size}],
             "extras": {
                 "source_fbx": str(self.input_fbx_path),
-                "morph_targets": 52,
+                "morph_targets": morph_target_count,
                 "azure_compatible": True
             }
         }
@@ -491,12 +561,40 @@ if __name__ == "__main__":
         json_content += b' ' * json_padding
         json_length += json_padding
 
-        # Create binary chunk (simulated mesh data)
-        binary_size = max(1024, fbx_size // 3)  # Realistic GLB compression
-        binary_content = b'\x00' * binary_size
+        # Create binary chunk with properly structured data
+        binary_content = bytearray(total_buffer_size)
+
+        # Fill with some non-zero data to make it more realistic
+        # This simulates actual mesh data structure
+        import struct
+
+        # Positions (simple cube vertices as example)
+        for i in range(min(8, vertex_count)):  # Just fill first 8 vertices with cube data
+            x, y, z = [(i >> j) & 1 for j in range(3)]  # Binary representation gives cube corners
+            x, y, z = x * 2 - 1, y * 2 - 1, z * 2 - 1  # Convert to -1,1 range
+            offset = position_offset + i * 12
+            struct.pack_into('<fff', binary_content, offset, x, y, z)
+
+        # Normals (pointing up)
+        for i in range(vertex_count):
+            offset = normal_offset + i * 12
+            struct.pack_into('<fff', binary_content, offset, 0.0, 1.0, 0.0)
+
+        # Texture coordinates
+        for i in range(vertex_count):
+            offset = texcoord_offset + i * 8
+            u, v = (i % 2), (i // 2) % 2
+            struct.pack_into('<ff', binary_content, offset, float(u), float(v))
+
+        # Indices (simple triangulation)
+        for i in range(min(index_count // 3, vertex_count // 3)):
+            base_idx = i * 3
+            for j in range(3):
+                offset = indices_offset + (base_idx + j) * 2
+                struct.pack_into('<H', binary_content, offset, base_idx + j)
 
         # Calculate total file size
-        total_size = 12 + 8 + json_length + 8 + binary_size  # Header + JSON chunk + BIN chunk
+        total_size = 12 + 8 + json_length + 8 + len(binary_content)  # Header + JSON chunk + BIN chunk
 
         # Write GLB file
         with open(self.output_glb_path, 'wb') as f:
@@ -511,7 +609,7 @@ if __name__ == "__main__":
             f.write(json_content)
 
             # Binary chunk
-            f.write(binary_size.to_bytes(4, 'little'))
+            f.write(len(binary_content).to_bytes(4, 'little'))
             f.write(b'BIN\x00')
             f.write(binary_content)
 
