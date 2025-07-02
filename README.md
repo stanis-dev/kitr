@@ -22,7 +22,7 @@ The new pipeline leverages Epic's DCC Export assembly for deterministic, repeata
 ```
 kitr/
 ├── README.md                          # This file
-├── pipeline.py                        # ⭐ Main pipeline orchestrator (NEW)
+├── pipeline.py                        # ⭐ Main pipeline orchestrator
 ├── PIPELINE_ARCHITECTURE.md           # Pipeline architecture documentation
 ├── REFACTOR_REFERENCE.md              # Reference to pre-refactor architecture
 ├── requirements.txt                   # Python dependencies

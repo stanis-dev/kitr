@@ -173,7 +173,7 @@ pip install -r requirements.txt
 
 ```
 kitr/
-├── pipeline.py                        # ⭐ Main orchestrator (NEW ARCHITECTURE)
+├── pipeline.py                        # ⭐ Main orchestrator
 ├── PIPELINE_ARCHITECTURE.md           # Architecture documentation
 ├── REFACTOR_REFERENCE.md              # Original pipeline reference
 ├── PROJECT_PREFERENCES.md             # This file
