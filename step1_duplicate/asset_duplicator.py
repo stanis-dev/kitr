@@ -14,6 +14,7 @@ import datetime
 import json
 
 from logger.core import get_logger
+from logger.validation import validate_pipeline_step, ValidationError
 
 logger = get_logger(__name__)
 
@@ -368,44 +369,36 @@ class AssetDuplicator:
 
     def validate_copy(self) -> bool:
         """
-        Validate the copied character assets.
+        Enhanced validation for copied character assets using validation system.
 
         Returns:
             True if validation passes, False otherwise
         """
-        logger.info("🔍 Validating character copy")
+        logger.info("🔍 Performing enhanced character copy validation")
 
         try:
-            if not self.copied_project_path or not self.copied_project_path.exists():
-                logger.error("Copied project file not found")
-                return False
+            # Prepare validation configuration
+            validation_config = {
+                'project_name': self.project_name,
+                'selected_character': self.selected_character,
+                'input_type': 'project',
+                'check_character_assets': True,
+                'essential_files': [
+                    f"{self.project_name}.uproject",
+                    "character_selection_manifest.json"
+                ],
+                'essential_dirs': ["Config", "Content"]
+            }
 
-            # Check for essential files
-            essential_files = [
-                self.source_project_path.name,  # .uproject file
-                "character_selection_manifest.json"
-            ]
+            # Use comprehensive validation system
+            validate_pipeline_step(
+                step_name="Step 1: Asset Duplicator",
+                input_path=self.source_project_path,
+                output_path=self.copy_dir,
+                validation_config=validation_config
+            )
 
-            essential_dirs = [
-                "Config",
-                "Content"
-            ]
-
-            missing_items: List[str] = []
-
-            for file_name in essential_files:
-                if not (self.copy_dir / file_name).exists():
-                    missing_items.append(file_name)
-
-            for dir_name in essential_dirs:
-                if not (self.copy_dir / dir_name).exists():
-                    missing_items.append(f"{dir_name}/")
-
-            if missing_items:
-                logger.error(f"Missing essential items in copy: {missing_items}")
-                return False
-
-            # Check for character assets
+            # Additional character-specific validation
             content_dir = self.copy_dir / "Content"
             character_assets_found = False
 
@@ -428,17 +421,20 @@ class AssetDuplicator:
             original_size = self._get_directory_size(self.source_project_dir)
             copy_size = self._get_directory_size(self.copy_dir)
 
-            logger.info(f"📊 Character copy validation:")
+            logger.info(f"📊 Enhanced character copy validation summary:")
             logger.info(f"   Selected character: {self.selected_character}")
             logger.info(f"   Original project size: {original_size / (1024*1024):.1f} MB")
             logger.info(f"   Character copy size: {copy_size / (1024*1024):.1f} MB")
             logger.info(f"   Size reduction: {((original_size - copy_size) / original_size * 100):.1f}%")
 
-            logger.info("✅ Character copy validation passed")
+            logger.info("✅ Enhanced character copy validation passed")
             return True
 
+        except ValidationError as e:
+            logger.error(f"❌ Character copy validation failed: {e}")
+            return False
         except Exception as e:
-            logger.error(f"❌ Copy validation failed: {e}")
+            logger.error(f"❌ Unexpected copy validation error: {e}")
             return False
 
     def _get_directory_size(self, directory: Path) -> int:

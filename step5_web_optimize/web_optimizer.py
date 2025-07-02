@@ -14,6 +14,7 @@ from typing import Dict, Any
 import datetime
 
 from logger.core import get_logger
+from logger.validation import validate_pipeline_step, ValidationError
 
 logger = get_logger(__name__)
 
@@ -428,38 +429,43 @@ class WebOptimizer:
 
     def validate_optimized_glb(self) -> bool:
         """
-        Validate the optimized GLB file.
+        COMPREHENSIVE FINAL GLB VALIDATION - this is the critical validation
+        the user requested. Final .glb must be evaluated fully before pipeline success.
 
         Returns:
             True if validation passes, False otherwise
         """
-        logger.info("✅ Validating web-optimized GLB")
+        logger.info("🔍 Performing COMPREHENSIVE FINAL GLB validation")
+        logger.info("   This is the critical validation before pipeline success")
 
         try:
-            # Check file exists
-            if not self.output_glb_path.exists():
-                logger.error(f"Optimized GLB not found: {self.output_glb_path}")
-                return False
+            # Prepare comprehensive validation configuration
+            validation_config = {
+                'expected_morph_count': 52,  # Azure requirement
+                'azure_compatible': True,
+                'web_optimized': True,
+                'draco_compressed': True,
+                'babylon_js_ready': True,
+                'performance_optimized': True,
+                'input_type': 'glb'
+            }
 
-            # Check GLB magic number
-            try:
-                with open(self.output_glb_path, 'rb') as f:
-                    magic = f.read(4)
-                    if magic != b'glTF':
-                        logger.error("Invalid optimized GLB - missing glTF magic number")
-                        return False
+            # Use COMPREHENSIVE validation system for final GLB
+            validate_pipeline_step(
+                step_name="Step 5: Web Optimize",
+                input_path=self.input_glb_path,
+                output_path=self.output_glb_path,
+                validation_config=validation_config
+            )
 
-                logger.info("   ✅ Valid GLB format detected")
-
-            except Exception as e:
-                logger.warning(f"Could not validate GLB magic number: {e}")
-
-            # Performance metrics
+            # Performance metrics validation
             metrics = self._calculate_performance_metrics()
 
             # Check for reasonable compression
             if metrics["compression_ratio"] < 5:
                 logger.warning("Low compression ratio - optimization may not be effective")
+            else:
+                logger.info(f"   ✅ Compression effective: {metrics['compression_ratio']:.1f}% reduction")
 
             # Check optimization result
             result_file = self.web_optimize_dir / "web_optimization_result.json"
@@ -478,21 +484,27 @@ class WebOptimizer:
                 except Exception as e:
                     logger.warning(f"Could not read optimization result: {e}")
 
-            # Log validation results
-            logger.info(f"📊 Web Optimization validation:")
+            # Final validation summary
+            logger.info(f"📊 COMPREHENSIVE FINAL GLB validation summary:")
             logger.info(f"   File name: {self.output_glb_path.name}")
             logger.info(f"   Optimized size: {metrics['output_size_kb']:.2f} KB")
             logger.info(f"   Compression: {metrics['compression_ratio']:.1f}% reduction")
             logger.info(f"   Format: Web-optimized GLB (glTF 2.0)")
-            logger.info(f"   Extensions: Draco compression, WebP textures")
-            logger.info(f"   Azure compatibility: Morph targets preserved")
-            logger.info(f"   Babylon.js ready: TRUE")
+            logger.info(f"   Extensions: Draco compression applied")
+            logger.info(f"   Azure compatibility: VALIDATED")
+            logger.info(f"   Babylon.js ready: VALIDATED")
+            logger.info(f"   Pipeline ready: TRUE")
 
-            logger.info("✅ Web optimization validation passed")
+            logger.info("✅ COMPREHENSIVE FINAL GLB validation passed")
+            logger.info("🎯 Pipeline can now succeed - all validations passed!")
             return True
 
+        except ValidationError as e:
+            logger.error(f"❌ CRITICAL: Final GLB validation failed: {e}")
+            logger.error("🚫 Pipeline CANNOT succeed until final GLB is valid")
+            return False
         except Exception as e:
-            logger.error(f"❌ Web optimization validation failed: {e}")
+            logger.error(f"❌ Unexpected final validation error: {e}")
             return False
 
     def get_output_glb_path(self) -> Path:

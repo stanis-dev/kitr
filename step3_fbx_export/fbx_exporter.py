@@ -13,6 +13,7 @@ from typing import Dict, Any
 import datetime
 
 from logger.core import get_logger
+from logger.validation import validate_pipeline_step, ValidationError
 
 logger = get_logger(__name__)
 
@@ -243,54 +244,51 @@ class FBXExporter:
 
     def validate_fbx_output(self) -> bool:
         """
-        Validate the exported FBX file.
+        COMPREHENSIVE FBX validation including materials and assets.
+        Uses the new validation system with enhanced checks.
 
         Returns:
             True if validation passes, False otherwise
         """
-        logger.info("✅ Validating FBX export output")
+        logger.info("🔍 Performing COMPREHENSIVE FBX validation")
 
         try:
-            # Check file exists
-            if not self.output_fbx_path.exists():
-                logger.error(f"FBX file not found: {self.output_fbx_path}")
-                return False
+            # Prepare validation configuration
+            validation_config = {
+                'expected_morph_count': self.export_settings.get('morph_target_count', 52),
+                'coordinate_system': self.export_settings.get('coordinate_system', 'right_handed'),
+                'include_materials': self.export_settings.get('include_materials', True),
+                'include_morph_targets': self.export_settings.get('include_morph_targets', True),
+                'input_type': 'fbx'
+            }
 
-            # Check file size
+            # Use comprehensive validation system
+            validate_pipeline_step(
+                step_name="Step 3: FBX Export",
+                input_path=self.combined_mesh_path,
+                output_path=self.output_fbx_path,
+                validation_config=validation_config
+            )
+
+            # Additional logging for verification
             file_size = self.output_fbx_path.stat().st_size
             file_size_mb = file_size / (1024 * 1024)
 
-            if file_size < 1024:  # Less than 1KB is suspicious
-                logger.error(f"FBX file too small: {file_size} bytes")
-                return False
-
-            # Check basic file content
-            try:
-                with open(self.output_fbx_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content_preview = f.read(500)  # Read first 500 chars
-
-                if "FBX" not in content_preview and "Autodesk" not in content_preview:
-                    logger.warning("FBX file may not have proper header")
-
-            except Exception as e:
-                logger.warning(f"Could not validate FBX content: {e}")
-
-            # Log validation results
-            logger.info(f"📊 FBX Export validation:")
+            logger.info(f"📊 FBX Export validation summary:")
             logger.info(f"   File name: {self.output_fbx_path.name}")
             logger.info(f"   File size: {file_size_mb:.2f} MB ({file_size:,} bytes)")
+            logger.info(f"   Expected morph targets: {validation_config['expected_morph_count']}")
+            logger.info(f"   Materials included: {validation_config['include_materials']}")
             logger.info(f"   Output directory: {self.fbx_export_dir}")
 
-            # Validate against export settings
-            expected_morphs = self.export_settings.get('morph_target_count', 52)
-            logger.info(f"   Expected morph targets: {expected_morphs}")
-            logger.info(f"   Coordinate system: {self.export_settings.get('coordinate_system', 'right_handed')}")
-
-            logger.info("✅ FBX validation passed")
+            logger.info("✅ COMPREHENSIVE FBX validation passed")
             return True
 
-        except Exception as e:
+        except ValidationError as e:
             logger.error(f"❌ FBX validation failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected FBX validation error: {e}")
             return False
 
     def get_output_fbx_path(self) -> Path:
