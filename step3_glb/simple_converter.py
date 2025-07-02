@@ -7,10 +7,9 @@ Converts optimized MetaHuman FBX files to web-ready GLB format using Blender.
 import os
 import subprocess
 import tempfile
-import logging
+from logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger("glb_converter")
 
 def create_blender_script(fbx_path: str, glb_path: str, materials_dir: str = "") -> str:
     """Create Blender script for FBX to GLB conversion with material loading"""

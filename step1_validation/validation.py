@@ -23,7 +23,10 @@ from docs import FACIAL_BLENDSHAPES, METAHUMAN_NAME_MAPPINGS
 # Backwards compatibility
 AZURE_BLENDSHAPES = FACIAL_BLENDSHAPES
 
-from .logging_config import logger
+from logger import get_logger
+
+# Create logger instance
+logger = get_logger("validation")
 
 
 @dataclass

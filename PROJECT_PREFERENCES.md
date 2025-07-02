@@ -209,7 +209,7 @@ stepN_<name>/
 5. **Self-Contained Development**: Each step can be developed/tested independently
 
 **Cross-Step Dependencies (Minimized)**:
-- **Shared Logging**: All steps import from `step1_validation.logging_config`
+- **Centralized Logging**: All steps import from `logger` package with specialized loggers
 - **Shared Constants**: All steps import Azure definitions from `step1_validation.constants`
 - **No Other Dependencies**: Steps cannot import from each other's logic modules
 

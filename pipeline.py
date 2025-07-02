@@ -10,14 +10,12 @@ import sys
 import subprocess
 import time
 from pathlib import Path
-import logging
+from logger import setup_logging as logger_setup, get_logger
 
 def setup_logging():
     """Setup basic logging for pipeline"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+    logger_setup(level="normal")
+    return get_logger("pipeline")
 
 
 def run_step(step_name: str, script_path: str, description: str) -> bool:

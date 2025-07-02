@@ -6,19 +6,18 @@ Blender-based validation script for input-file.fbx
 """
 
 import sys
-import logging
 from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from step1_validation.validation import validate_fbx
-from step1_validation.logging_config import setup_logging
+from logger import setup_logging
 
 
 def main():
     """Validate input-file.fbx - that's it!"""
-    setup_logging(level=logging.INFO)
+    setup_logging(level="normal")
 
     # Find input file - look in current directory first, then parent
     input_file = Path("input-file.fbx")
