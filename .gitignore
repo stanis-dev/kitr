@@ -1,214 +1,37 @@
-# MetaHuman to Web GLB Pipeline - Git Ignore Rules
-# Never commit or stage these files/directories
+# Materials and outputs
+materials/
+step3_glb/azure_optimized_web.glb
+step4_render/output/
+materials.zip
 
-# =============================================================================
-# PIPELINE OUTPUT FILES - NEVER COMMIT
-# =============================================================================
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.tmp
 
-# All pipeline step outputs
-output/
-step1_duplicate/output/
-step2_dcc_export/output/
-step3_fbx_export/output/
-step4_glb_convert/output/
-step5_web_optimize/output/
+# FBX intermediate and temporary files
+output-step2-azure-mapped.fbx
+*-temp.fbx
+*-backup.fbx
+debug_*.py
 
-# FBX files (input, intermediate, and output)
-*.fbx
-*.FBX
-
-# GLB/glTF files (intermediate and final outputs)
-*.glb
-*.gltf
-*.GLB
-*.GLTF
-
-# DCC Export outputs
-*_Combined.*
-*_Export/
-DCC_Export/
-
-# Temporary processing files
-temp_*
-tmp_*
-processing_*
-
-# =============================================================================
-# UNREAL ENGINE FILES - NEVER COMMIT
-# =============================================================================
-
-# Unreal Engine temporary assets
-Temp_MetaHuman_Processing/
-*/Temp_*/
-Binaries/
-Intermediate/
-DerivedDataCache/
-Saved/
-
-# Unreal Engine project files (if any)
-*.uproject
-*.uasset
-*.umap
-
-# =============================================================================
-# BLENDER FILES - NEVER COMMIT
-# =============================================================================
-
-# Blender temporary files
-*.blend1
-*.blend2
-*.blend~
-blender_conversion_script.py
-blender_temp/
-*.log
-
-# =============================================================================
-# TOOL-SPECIFIC TEMPORARY FILES
-# =============================================================================
-
-# gltf-transform temporary files
-gltf_temp/
-*.tmp.glb
-*.optimized.glb
-
-# Processing reports (optional - comment out if you want to keep them)
-*_report.json
-*_statistics.json
-*_validation.json
-
-# =============================================================================
-# SYSTEM FILES - NEVER COMMIT
-# =============================================================================
-
-# macOS
+# macOS system files
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
 
-# Windows
-*.tmp
-*.temp
-desktop.ini
-
-# Linux
-*~
-.nfs*
-
-# =============================================================================
-# DEVELOPMENT FILES - NEVER COMMIT
-# =============================================================================
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-.venv/
-
-# IDE files
+# Editor and IDE files
 .vscode/settings.json
-.vscode/launch.json
-.idea/
 *.swp
 *.swo
 *~
 
-# =============================================================================
-# LOGS AND DEBUGGING - NEVER COMMIT
-# =============================================================================
-
-# Log files
-*.log
-logs/
-debug.log
-error.log
-pipeline.log
-step*.log
-
-# Debug outputs
-debug/
-debug_output/
-test_output/
-
-# =============================================================================
-# LARGE BINARY FILES - NEVER COMMIT
-# =============================================================================
-
-# Texture files (if generated)
-*.png
-*.jpg
-*.jpeg
-*.tga
-*.exr
-*.hdr
-
-# Archive files
-*.zip
-*.rar
-*.7z
-*.tar.gz
-
-# Video files (if any test renders)
-*.mp4
-*.avi
-*.mov
-
-# =============================================================================
-# USER-SPECIFIC CONFIG - NEVER COMMIT
-# =============================================================================
-
-# User-specific configuration
-config.local.py
-settings.local.json
-user_preferences.json
-local_config/
-
-# Personal notes and drafts
-NOTES.md
-TODO.md
-SCRATCH.md
-personal/
-
-# =============================================================================
-# EXCEPTIONS - ALLOW THESE SPECIFIC FILES
-# =============================================================================
-
-# Force include important docs even if they match patterns above
-!README.md
-!PIPELINE_ARCHITECTURE.md
-!PROJECT_PREFERENCES.md
-!REFACTOR_REFERENCE.md
-
-# Force include example/template files
-!example_*
-!template_*
-!sample_*
+# Blender temporary files
+*.blend1
+*.blend2
+untitled.blend
