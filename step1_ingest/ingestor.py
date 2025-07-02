@@ -8,7 +8,7 @@ Consolidates all ingestion logic into a single, DRY implementation.
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 import datetime
 
 from logger.core import get_logger
@@ -32,7 +32,7 @@ class AssetIngestor:
         project_root = Path(__file__).parent.parent
         self.artifacts_base = project_root / artifacts_base_dir
         self.session_token: Optional[SessionToken] = None
-        self.checkpoint_data: dict = {}
+        self.checkpoint_data: Dict[str, Any] = {}
 
     def locate_project(self, uproj_path: str) -> ValidationResult[ProjectPathInfo]:
         """
@@ -80,7 +80,9 @@ class AssetIngestor:
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to locate project: {e}")
 
-    def read_engine_version(self, project_info: ProjectPathInfo) -> ValidationResult[EngineVersion]:
+    def read_engine_version(
+        self, project_info: ProjectPathInfo
+    ) -> ValidationResult[EngineVersion]:
         """
         Extract and validate engine version from .uproject.
 
@@ -134,7 +136,9 @@ class AssetIngestor:
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to read engine version: {e}")
 
-    def check_metahuman_plugins(self, project_info: ProjectPathInfo) -> ValidationResult[List[PluginStatus]]:
+    def check_metahuman_plugins(
+        self, project_info: ProjectPathInfo
+    ) -> ValidationResult[List[PluginStatus]]:
         """
         Verify required MetaHuman plugins are available in UE installation.
 
@@ -150,7 +154,9 @@ class AssetIngestor:
             plugins_status = []
 
             # Get engine association from .uproject
-            uproject_file = project_info.abs_root / f"{project_info.abs_root.name}.uproject"
+            uproject_file = (
+                project_info.abs_root / f"{project_info.abs_root.name}.uproject"
+            )
             with open(uproject_file, 'r', encoding='utf-8') as f:
                 project_data = json.load(f)
 
@@ -286,7 +292,9 @@ class AssetIngestor:
 
         return None
 
-    def open_project_headless(self, project_info: ProjectPathInfo) -> ValidationResult[SessionToken]:
+    def open_project_headless(
+        self, project_info: ProjectPathInfo
+    ) -> ValidationResult[SessionToken]:
         """
         Launch UE5.6 in headless mode to validate project.
 
@@ -335,7 +343,9 @@ class AssetIngestor:
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to open project headless: {e}")
 
-    def enumerate_metahumans(self, session_token: SessionToken) -> ValidationResult[List[MetaHumanAsset]]:
+    def enumerate_metahumans(
+        self, session_token: SessionToken
+    ) -> ValidationResult[List[MetaHumanAsset]]:
         """
         Find actual MetaHuman character assets in the project.
 

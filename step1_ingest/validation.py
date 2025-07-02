@@ -9,7 +9,7 @@ Consolidates all typing and validation logic in one place.
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Generic, TypeVar
+from typing import Dict, Any, List, Optional, Generic, TypeVar, cast
 from logger.core import get_logger
 
 logger = get_logger(__name__)
@@ -69,7 +69,7 @@ class MetaHumanHealthReport:
 
     def get_issues(self) -> List[str]:
         """Get list of health issues"""
-        issues: list[str] = []
+        issues: List[str] = []
         if not self.has_LOD0:
             issues.append("No LOD0")
         if self.morph_count < 700:
@@ -125,7 +125,10 @@ class IngestCheckpoint:
             "success": self.success,
             "project_path": self.project_path,
             "engine_version": self.engine_version,
-            "plugins": [{"name": p.name, "enabled": p.enabled, "version": p.version} for p in self.plugins],
+            "plugins": [
+                {"name": p.name, "enabled": p.enabled, "version": p.version}
+                for p in self.plugins
+            ],
             "metahumans": [
                 {
                     "asset_path": mh.asset_path,
@@ -153,14 +156,14 @@ class ValidationResult(Generic[T]):
         self.error = error
 
     @classmethod
-    def success_result(cls, data: T) -> 'ValidationResult[T]':
+    def success_result(cls, data: T) -> 'ValidationResult[Any]':
         """Create successful validation result"""
         return cls(True, data)
 
     @classmethod
-    def failure_result(cls, error: str) -> 'ValidationResult[T]':
+    def failure_result(cls, error: str) -> 'ValidationResult[Any]':
         """Create failed validation result"""
-        return cls(False, error=error)
+        return cast('ValidationResult[Any]', cls(False, None, error))
 
 
 class EngineVersion:
