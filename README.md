@@ -1,68 +1,90 @@
-# MetaHuman to Azure FBX Processing Pipeline
+# MetaHuman to Web GLB Pipeline
 
-**Status:** ✅ COMPLETE - PERFECT AZURE OPTIMIZATION ACHIEVED
-**Azure Compatibility:** 100% Certified
+**Status:** 🚧 REFACTOR IN PROGRESS - New Unreal Engine Architecture
+**Target:** Web-optimized GLB for Babylon.js + Azure Cognitive Services
 
-A complete pipeline for converting MetaHuman FBX files to Azure Cognitive Services compatible format with **perfect optimization** and **comprehensive validation**.
+A complete pipeline for converting MetaHuman assets to web-optimized GLB files using Unreal Engine's DCC Export pipeline.
 
-## 🎉 Achievement Summary
+## 🚧 New Architecture Overview
 
-**PERFECT AZURE OPTIMIZATION ACCOMPLISHED!**
+**UNREAL ENGINE DCC EXPORT PIPELINE**
 
-- ✅ **52/52 Azure blendshapes** (100% compatibility)
-- ✅ **3/3 Azure rotations** supported
-- ✅ **Zero excess morph targets** (perfect cleanup)
-- ✅ **Complete validation passed** (Azure-certified)
-- ✅ **File optimized** (18.1 MB clean output)
-- ✅ **Production ready** (Azure Cognitive Services deployment)
+The new pipeline leverages Epic's DCC Export assembly for deterministic, repeatable results:
+
+- 🎯 **5-Step Architecture** (Duplicate → DCC Export → FBX → GLB → Web Optimize)
+- 🔒 **Asset Immutability** (Original MetaHuman assets never modified)
+- 🎭 **52 Azure Morphs** (Maintained for Azure Cognitive Services)
+- 🚀 **Web Optimization** (Draco compression, WebP textures, Babylon.js ready)
+- 🔧 **Deterministic Output** (Same input = same output every time)
 
 ## 📁 Project Structure
 
 ```
 kitr/
 ├── README.md                          # This file
-├── input-file.fbx                     # Original MetaHuman FBX (823 morphs)
-├── pipeline.py                        # Main pipeline orchestrator
+├── pipeline.py                        # ⭐ Main pipeline orchestrator (NEW)
+├── NEW_PIPELINE.md                    # New architecture documentation
+├── REFACTOR_REFERENCE.md              # Reference to pre-refactor architecture
 ├── requirements.txt                   # Python dependencies
 │
-├── docs/                              # 🐍 Python Modules with IDE Support
+├── docs/                              # 🐍 Python Modules with IDE Support (PRESERVED)
 │   ├── README.md                      # Python-based architecture overview
 │   ├── azure_blendshapes_complete.py  # ⭐ Azure parameters with helper functions
 │   ├── metahuman_to_azure_mappings.py # MetaHuman→Azure mappings (110) with utilities
 │   ├── validation_requirements.py    # Validation specs with validation functions
-│   ├── original_fbx_morph_targets_complete.json   # Original 823 morph documentation
-│   ├── step2_success_summary.md       # Success report
-│   ├── step2_cleanup_success.md       # Cleanup & validation details
-│   └── morph_targets_comparison.txt   # Analysis comparison
+│   └── original_fbx_morph_targets_complete.json   # Original 823 morph documentation
 │
-├── step1_validation/                  # 🔍 Validation & Constants
-│   ├── validate.py                    # FBX structure validation
-│   ├── constants.py                   # Azure mappings & parameters
-│   └── logging_config.py              # Logging configuration
+├── logger/                            # 🔧 Logging System (PRESERVED)
+│   ├── __init__.py
+│   └── core.py
 │
-└── step2_morphs/                      # 🎭 Azure Processing & Optimization
-    ├── step2_final.py                 # ⭐ COMPLETE PIPELINE (4-stage)
-    ├── morph_processor.py             # Azure blendshape mapping
-    ├── bone_processor.py              # Bone structure analysis
-    ├── cleanup_processor.py           # 🧹 Morph target cleanup
-    ├── validate_clean_fbx.py          # 🔍 Final validation
-    │
-    ├── output-step2-azure-final.fbx   # ⭐ PRODUCTION OUTPUT (18.1 MB)
-    ├── output-step2-azure-mapped.fbx  # Intermediate (with all morphs)
-    ├── output-step2-azure-clean.fbx   # Clean version (same as final)
-    │
-    └── *.json                         # Processing reports & statistics
+├── step1_duplicate/                   # 🔄 Duplicate & Prepare Asset
+│   ├── __init__.py
+│   └── asset_duplicator.py           # MetaHuman asset duplication + morph prep
+│
+├── step2_dcc_export/                  # 🔧 DCC Export Assembly
+│   ├── __init__.py
+│   └── dcc_assembler.py              # Epic's DCC Export pipeline integration
+│
+├── step3_fbx_export/                  # 📦 FBX Export
+│   ├── __init__.py
+│   └── fbx_exporter.py               # Unreal Engine FBX export automation
+│
+├── step4_glb_convert/                 # 🔄 GLB Convert
+│   ├── __init__.py
+│   └── blender_converter.py          # Headless Blender FBX→GLB conversion
+│
+├── step5_web_optimize/                # 🚀 Web Optimize
+│   ├── __init__.py
+│   └── web_optimizer.py              # gltf-transform optimization
+│
+└── archive_old_pipeline/              # 📦 ARCHIVED ORIGINAL PIPELINE
+    ├── README.md                      # Archive documentation
+    ├── old_pipeline.py                # Original orchestrator
+    ├── step1_validation/              # Original validation logic
+    ├── step2_morphs/                  # ⭐ PERFECT Azure optimization (reference)
+    ├── step3_glb/                     # Original GLB conversion
+    └── step4_render/                  # Original rendering validation
 ```
 
 ## 🚀 Quick Start
 
-### Run Complete Azure Optimization:
+### Run New Pipeline (Skeleton):
 ```bash
-cd step2_morphs
-python step2_final.py
+python pipeline.py
 ```
 
-**Output:** `output-step2-azure-final.fbx` - Perfect Azure-optimized file
+**Status:** All steps are placeholders - implementation in progress
+
+### Access Original Pipeline (Reference):
+```bash
+# Switch to stable reference
+git checkout pre-refactor-stable
+
+# Or run archived version
+cd archive_old_pipeline
+python old_pipeline.py
+```
 
 ### Key Features:
 - **4-stage processing pipeline**: Mapping → Analysis → Cleanup → Validation

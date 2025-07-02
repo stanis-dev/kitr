@@ -1,236 +1,292 @@
 #!/usr/bin/env python3
 """
-MetaHuman FBX to GLB Pipeline - Single Entry Point
+New MetaHuman Pipeline - Unreal Engine to Web GLB
 
-Orchestrates the complete pipeline from MetaHuman FBX validation through final GLB optimization.
-Follows file immutability principle - each step produces new output files.
+Orchestrates the complete 5-step pipeline from MetaHuman asset duplication
+through web-optimized GLB export using Unreal Engine's DCC Export.
 """
 
 import sys
 import subprocess
 import time
 from pathlib import Path
-from logger import setup_logging as logger_setup, get_logger
-
-def setup_logging():
-    """Setup basic logging for pipeline"""
-    logger_setup(level="normal")
-    return get_logger("pipeline")
+from typing import Dict, Any, Optional
 
 
-def run_step(step_name: str, script_path: str, description: str) -> bool:
-    """
-    Run a single pipeline step and return success status.
+class NewPipelineOrchestrator:
+    """Orchestrates the new 5-step MetaHuman to GLB pipeline."""
 
-    Args:
-        step_name: Display name for the step (e.g., "Step 1")
-        script_path: Path to the Python script to execute
-        description: Brief description of what the step does
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize the pipeline orchestrator.
 
-    Returns:
-        True if step succeeded, False if it failed
-    """
-    print(f"\n🚀 {step_name}: {description}")
-    print("=" * 60)
+        Args:
+            config: Pipeline configuration dictionary
+        """
+        self.config = config
+        self.pipeline_start_time: Optional[float] = None
+        self.steps_completed = 0
 
-    start_time = time.time()
+        # Pipeline step definitions
+        self.pipeline_steps = [
+            {
+                "step_name": "Step 1",
+                "script_path": "step1_duplicate/asset_duplicator.py",
+                "description": "Duplicate & Prepare Asset",
+                "details": "Asset duplication and morph baking preparation"
+            },
+            {
+                "step_name": "Step 2",
+                "script_path": "step2_dcc_export/dcc_assembler.py",
+                "description": "DCC Export Assembly",
+                "details": "Run Epic's DCC Export pipeline"
+            },
+            {
+                "step_name": "Step 3",
+                "script_path": "step3_fbx_export/fbx_exporter.py",
+                "description": "FBX Export",
+                "details": "Export combined mesh as FBX"
+            },
+            {
+                "step_name": "Step 4",
+                "script_path": "step4_glb_convert/blender_converter.py",
+                "description": "GLB Convert",
+                "details": "Convert FBX to glTF (GLB) format"
+            },
+            {
+                "step_name": "Step 5",
+                "script_path": "step5_web_optimize/web_optimizer.py",
+                "description": "Web Optimize",
+                "details": "Optimize GLB for web delivery"
+            }
+        ]
 
-    try:
-        # Run the step script
-        subprocess.run(
-            [sys.executable, script_path],
-            check=True,
-            capture_output=False,  # Let output stream to console
-            text=True
-        )
+    def show_pipeline_overview(self) -> None:
+        """Display the complete pipeline flow and outputs."""
+        print("\n📋 New MetaHuman to Web GLB Pipeline")
+        print("=" * 60)
+        print("Source: Unreal Engine MetaHuman Character asset")
+        print("Target: Web-optimized GLB for Babylon.js")
+        print("")
+        print("Pipeline Flow:")
+        print("├─ Step 1: Duplicate & Prepare Asset")
+        print("│   └─ Output: Temp asset with 52 Azure morphs")
+        print("├─ Step 2: DCC Export Assembly")
+        print("│   └─ Output: Combined skeletal mesh + DCC export")
+        print("├─ Step 3: FBX Export")
+        print("│   └─ Output: Deterministic FBX with full rig")
+        print("├─ Step 4: GLB Convert")
+        print("│   └─ Output: GLB with morphs and bones")
+        print("└─ Step 5: Web Optimize")
+        print("    └─ Output: Web-optimized GLB (final)")
+        print("\n🔒 Asset Immutability: Original MetaHuman assets never modified")
+        print("🎯 Target: Azure Cognitive Services + Babylon.js compatibility")
 
-        elapsed = time.time() - start_time
-        print(f"✅ {step_name} completed successfully in {elapsed:.1f}s")
+    def check_prerequisites(self) -> bool:
+        """Check that all prerequisites are met before starting pipeline."""
+        print("🔍 Checking prerequisites...")
+
+        # Check Unreal Engine availability
+        # TODO: Implement Unreal Engine check
+        print("❌ TODO: Check Unreal Engine Python environment")
+
+        # Check Blender availability
+        try:
+            result = subprocess.run(
+                ["blender", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                blender_version = result.stdout.split()[1]
+                print(f"✅ Blender available: {blender_version}")
+            else:
+                print("❌ Blender not accessible")
+                return False
+        except Exception:
+            print("❌ Blender not found - required for Step 4")
+            return False
+
+        # Check gltf-transform availability
+        try:
+            result = subprocess.run(
+                ["gltf-transform", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                print("✅ gltf-transform available")
+            else:
+                print("❌ gltf-transform not accessible")
+                return False
+        except Exception:
+            print("❌ gltf-transform not found - required for Step 5")
+            print("   Install with: npm install -g @gltf-transform/cli")
+            return False
+
+        # Check step scripts exist
+        for step in self.pipeline_steps:
+            script_path = Path(step["script_path"])
+            if not script_path.exists():
+                print(f"❌ Required script not found: {script_path}")
+                return False
+
+        print("✅ All step scripts found")
         return True
 
-    except subprocess.CalledProcessError as e:
-        elapsed = time.time() - start_time
-        print(f"❌ {step_name} failed after {elapsed:.1f}s (exit code: {e.returncode})")
-        return False
-    except Exception as e:
-        elapsed = time.time() - start_time
-        print(f"❌ {step_name} failed after {elapsed:.1f}s: {e}")
-        return False
+    def run_step(self, step_info: Dict[str, str]) -> bool:
+        """
+        Run a single pipeline step and return success status.
 
+        Args:
+            step_info: Step information dictionary
 
-def check_prerequisites() -> bool:
-    """Check that all prerequisites are met before starting pipeline."""
-    print("🔍 Checking prerequisites...")
+        Returns:
+            True if step succeeded, False if it failed
+        """
+        step_name = step_info["step_name"]
+        script_path = step_info["script_path"]
+        description = step_info["description"]
+        details = step_info["details"]
 
-    # Check input file exists
-    input_file = Path("input-file.fbx")
-    if not input_file.exists():
-        print(f"❌ Input file not found: {input_file}")
-        print("   Please ensure input-file.fbx is present in the current directory")
-        return False
+        print(f"\n🚀 {step_name}: {description}")
+        print("=" * 60)
+        print(f"Details: {details}")
 
-    print(f"✅ Input file found: {input_file} ({input_file.stat().st_size / (1024*1024):.1f}MB)")
+        start_time = time.time()
 
-    # Check step scripts exist
-    required_scripts = [
-        "step1_validation/validate.py",
-        "step2_morphs/azure_processor.py",
-        "step3_glb/simple_converter.py",
-        "step4_render/glb_animator.py"
-    ]
+        try:
+            # Run the step script
+            subprocess.run(
+                [sys.executable, script_path],
+                check=True,
+                capture_output=False,  # Let output stream to console
+                text=True
+            )
 
-    for script in required_scripts:
-        if not Path(script).exists():
-            print(f"❌ Required script not found: {script}")
+            elapsed = time.time() - start_time
+            print(f"✅ {step_name} completed successfully in {elapsed:.1f}s")
+            return True
+
+        except subprocess.CalledProcessError as e:
+            elapsed = time.time() - start_time
+            print(f"❌ {step_name} failed after {elapsed:.1f}s (exit code: {e.returncode})")
+            return False
+        except Exception as e:
+            elapsed = time.time() - start_time
+            print(f"❌ {step_name} failed after {elapsed:.1f}s: {e}")
             return False
 
-    print("✅ All required step scripts found")
+    def show_final_summary(self, total_time: float) -> None:
+        """Show final pipeline execution summary."""
+        print("\n" + "=" * 60)
+        print("🏁 NEW PIPELINE EXECUTION SUMMARY")
+        print("=" * 60)
 
-    # Check Blender availability (required for processing)
-    try:
-        result = subprocess.run(
-            ["blender", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        if result.returncode == 0:
-            blender_version = result.stdout.split()[1]
-            print(f"✅ Blender available: {blender_version}")
+        # Expected output files
+        output_files = [
+            ("step1_duplicate", "Temp MetaHuman asset with 52 morphs"),
+            ("step2_dcc_export", "Combined skeletal mesh + DCC export"),
+            ("step3_fbx_export", "Deterministic FBX file"),
+            ("step4_glb_convert", "GLB with morphs and bones"),
+            ("step5_web_optimize", "Web-optimized GLB (final)"),
+        ]
+
+        for i, (_, description) in enumerate(output_files, 1):
+            if i <= self.steps_completed:
+                print(f"📁 Step {i}: {description} - CREATED")
+            else:
+                print(f"❌ Step {i}: {description} - MISSING (step failed)")
+
+        print(f"\n⏱️  Total execution time: {total_time:.1f}s")
+        print(f"📊 Steps completed: {self.steps_completed}/5")
+
+        if self.steps_completed == 5:
+            print("✅ All steps completed successfully!")
+            print("🎉 Web-optimized GLB ready for Babylon.js deployment!")
         else:
-            print("❌ Blender not accessible")
+            print("❌ Pipeline failed - not all steps completed")
+
+        print("\n🔒 Asset immutability maintained - original MetaHuman preserved")
+
+    def run_pipeline(self) -> bool:
+        """
+        Execute the complete pipeline.
+
+        Returns:
+            True if all steps completed successfully, False otherwise
+        """
+        self.pipeline_start_time = time.time()
+
+        print("🎭 New MetaHuman to Web GLB Pipeline")
+        print("=" * 60)
+        print("Unreal Engine DCC Export → Optimized Web GLB")
+
+        # Check prerequisites
+        if not self.check_prerequisites():
+            print("\n❌ Prerequisites not met. Pipeline cannot continue.")
             return False
-    except Exception:
-        print("❌ Blender not found or not accessible")
-        print("   Please install Blender and ensure it's in your PATH")
-        return False
 
-    return True
+        # Show pipeline overview
+        self.show_pipeline_overview()
 
+        # Start pipeline execution
+        print("\n🚀 STARTING PIPELINE EXECUTION")
+        print("=" * 60)
 
-def show_pipeline_summary():
-    """Display the complete pipeline flow and file outputs."""
-    print("\n📋 MetaHuman FBX to GLB Pipeline Overview")
-    print("=" * 60)
-    print("Input:  input-file.fbx (MetaHuman export)")
-    print("├─ Step 1: FBX Validation")
-    print("│   └─ Output: validation report only")
-    print("├─ Step 2: Azure FBX Optimization")
-    print("│   └─ Output: azure_optimized.fbx")
-    print("├─ Step 3: FBX to GLB Conversion")
-    print("│   └─ Output: step3_glb/azure_optimized_web.glb")
-    print("├─ Step 4: GLB Animation Validation")
-    print("│   └─ Output: step4_render/output/animation_validation_report.json + rendered frames")
-    print("├─ Step 5: GLB Optimization [NOT IMPLEMENTED]")
-    print("│   └─ Output: step5_optimize/optimized.glb")
-    print("├─ Step 6: Texture Optimization [NOT IMPLEMENTED]")
-    print("│   └─ Output: step6_textures/output-step6-optimized.glb")
-    print("└─ Step 7: Final Validation [NOT IMPLEMENTED]")
-    print("    └─ Output: step7_final/output-final-avatar.glb")
-    print("\n🔒 File Immutability: Original input-file.fbx is never modified")
+        # Execute each step
+        for step_info in self.pipeline_steps:
+            if not self.run_step(step_info):
+                # Step failed, stop pipeline
+                break
+            self.steps_completed += 1
+
+        # Show final summary
+        total_time = time.time() - self.pipeline_start_time
+        self.show_final_summary(total_time)
+
+        return self.steps_completed == 5
 
 
-def show_final_summary(steps_completed: int, total_time: float):
-    """Show final pipeline execution summary."""
-    print("\n" + "=" * 60)
-    print("🏁 PIPELINE EXECUTION SUMMARY")
-    print("=" * 60)
-
-    # Show file status
-    input_file = Path("input-file.fbx")
-    if input_file.exists():
-        print(f"📁 Input: {input_file.name} ({input_file.stat().st_size / (1024*1024):.1f}MB) - PRESERVED")
-
-    output_files = [
-        "azure_optimized.fbx",
-        "step3_glb/azure_optimized_web.glb",
-        "step4_render/output/animation_validation_report.json",
-        "step5_optimize/optimized.glb",
-        "step6_textures/output-step6-optimized.glb",
-        "step7_final/output-final-avatar.glb"
-    ]
-
-    for i, output_file in enumerate(output_files, 2):
-        file_path = Path(output_file)
-        if file_path.exists():
-            size_mb = file_path.stat().st_size / (1024*1024)
-            print(f"📁 Step {i}: {file_path.name} ({size_mb:.1f}MB) - CREATED")
-        elif i <= steps_completed:
-            print(f"❌ Step {i}: {output_file} - MISSING (step may have failed)")
-
-    print(f"\n⏱️  Total execution time: {total_time:.1f}s")
-    print(f"📊 Steps completed: {steps_completed}/7")
-
-    if steps_completed == 4:  # All currently implemented steps
-        print("✅ All implemented steps completed successfully!")
-    elif steps_completed < 4:
-        print("❌ Pipeline failed - not all steps completed")
-
-    print("\n🔒 File immutability maintained - original input preserved")
+def create_default_config() -> Dict[str, Any]:
+    """Create default pipeline configuration."""
+    return {
+        "source_metahuman_asset": "/Game/MetaHumans/YourCharacter/BP_YourCharacter",
+        "temp_package_name": "Temp_MetaHuman_Processing",
+        "output_directory": "output",
+        "preserve_original": True,
+        "target_morph_count": 52,
+        "web_optimization": {
+            "draco_compression": True,
+            "texture_format": "webp",
+            "texture_quality": 90,
+        }
+    }
 
 
 def main():
-    """Main pipeline orchestrator."""
-    setup_logging()
+    """Main entry point for the MetaHuman to Web GLB pipeline."""
+    print("🎭 MetaHuman to Web GLB Pipeline")
+    print("=" * 50)
+    print("🚧 STATUS: SKELETON PHASE - Structure Only")
+    print("All steps are placeholders and require implementation")
 
-    print("🎭 MetaHuman FBX to GLB Pipeline")
-    print("=" * 60)
-    print("Single entry point for complete avatar processing")
-    print("Processes MetaHuman FBX → Optimized GLB for Babylon.js + Azure visemes")
+    # Create default configuration
+    config = create_default_config()
 
-    # Check prerequisites
-    if not check_prerequisites():
-        print("\n❌ Prerequisites not met. Pipeline cannot continue.")
-        sys.exit(1)
+    # Initialize and run pipeline
+    orchestrator = NewPipelineOrchestrator(config)
 
-    # Show pipeline overview
-    show_pipeline_summary()
+    success = orchestrator.run_pipeline()
 
-    # Start pipeline execution
-    print("\n🚀 STARTING PIPELINE EXECUTION")
-    print("=" * 60)
-
-    pipeline_start = time.time()
-    steps_completed = 0
-
-    # Define pipeline steps
-    pipeline_steps = [
-        ("Step 1", "step1_validation/validate.py", "FBX Validation & Azure Blendshape Check"),
-        ("Step 2", "step2_morphs/azure_processor.py", "Azure FBX Optimization"),
-        ("Step 3", "step3_glb/simple_converter.py", "FBX to GLB Conversion"),
-        ("Step 4", "step4_render/glb_animator.py", "GLB Animation Validation"),
-        # Future steps will be added here as they're implemented
-        # ("Step 5", "step5_optimize.py", "GLB Optimization & Compression"),
-        # ("Step 6", "step6_textures.py", "Texture Resolution Optimization"),
-        # ("Step 7", "step7_final.py", "Final Validation & Browser Compatibility"),
-    ]
-
-    # Execute each step
-    for step_name, script_path, description in pipeline_steps:
-        if not Path(script_path).exists():
-            print(f"\n⏭️  {step_name}: {description}")
-            print(f"   Script {script_path} not implemented yet - skipping")
-            continue
-
-        success = run_step(step_name, script_path, description)
-
-        if success:
-            steps_completed += 1
-        else:
-            print(f"\n💥 Pipeline failed at {step_name}")
-            print("   Fix the error and restart the pipeline")
-            break
-
-    # Show final summary
-    total_time = time.time() - pipeline_start
-    show_final_summary(steps_completed, total_time)
-
-    # Exit with appropriate code
-    if steps_completed < len([s for s in pipeline_steps if Path(s[1]).exists()]):
-        sys.exit(1)
-    else:
+    if success:
         print("\n🎉 Pipeline completed successfully!")
         sys.exit(0)
+    else:
+        print("\n❌ Pipeline failed.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
