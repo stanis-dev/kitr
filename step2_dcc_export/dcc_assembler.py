@@ -13,6 +13,7 @@ from typing import Optional, Dict, Any, List
 import datetime
 
 from logger.core import get_logger
+from step2_dcc_export.validation import validate_dcc_export_output, validate_step_input, ValidationError
 
 logger = get_logger(__name__)
 
@@ -361,49 +362,55 @@ class DCCAssembler:
 
     def validate_dcc_export(self) -> bool:
         """
-        Validate the DCC export output.
+        Enhanced DCC export validation using validation system.
 
         Returns:
             True if validation passes, False otherwise
         """
-        logger.info("✅ Validating DCC export output")
+        logger.info("🔍 Performing enhanced DCC export validation")
 
         try:
-            # Check output directory exists
-            if not self.dcc_export_folder or not self.dcc_export_folder.exists():
-                logger.error("DCC export folder not found")
-                return False
+            # Prepare validation configuration
+            validation_config = {
+                'input_type': 'project',
+                'expected_directories': ["FBX", "Textures", "Materials", "Meshes"],
+                'combined_mesh_required': True,
+                'metahuman_export': True,
+                'fbx_format': True
+            }
 
-            # Check for expected subdirectories
-            expected_dirs = ["FBX", "Textures", "Materials", "Meshes"]
-            missing_dirs: List[str] = []
+            # Ensure output folder exists for validation
+            if not self.dcc_export_folder:
+                raise ValidationError("DCC export folder not initialized")
 
-            for expected_dir in expected_dirs:
-                dir_path = self.dcc_export_folder / expected_dir
-                if not dir_path.exists():
-                    missing_dirs.append(expected_dir)
+            # Use step-specific validation system
+            input_type = validation_config.get('input_type', 'project')
+            if isinstance(input_type, str):
+                validate_step_input(self.copied_project_path, input_type)
+            validate_dcc_export_output(self.dcc_export_folder, validation_config)
 
-            if missing_dirs:
-                logger.error(f"Missing expected directories: {missing_dirs}")
-                return False
-
-            # Check for combined mesh
+            # Additional DCC-specific validation
             if not self.combined_mesh_asset or not Path(self.combined_mesh_asset).exists():
-                logger.error("Combined mesh asset not found")
-                return False
+                raise ValidationError("Combined mesh asset not found after DCC export")
 
             # Log validation results
             mesh_size = Path(self.combined_mesh_asset).stat().st_size
-            logger.info(f"📊 DCC Export validation:")
-            logger.info(f"   Combined mesh: {Path(self.combined_mesh_asset).name}")
-            logger.info(f"   Mesh file size: {mesh_size} bytes")
-            logger.info(f"   Output directory: {self.dcc_export_folder}")
+            mesh_size_mb = mesh_size / (1024 * 1024)
 
-            logger.info("✅ DCC export validation passed")
+            logger.info(f"📊 Enhanced DCC export validation summary:")
+            logger.info(f"   Combined mesh: {Path(self.combined_mesh_asset).name}")
+            logger.info(f"   Mesh file size: {mesh_size_mb:.2f} MB ({mesh_size:,} bytes)")
+            logger.info(f"   Output directory: {self.dcc_export_folder}")
+            logger.info(f"   Export structure: All required directories present")
+
+            logger.info("✅ Enhanced DCC export validation passed")
             return True
 
-        except Exception as e:
+        except ValidationError as e:
             logger.error(f"❌ DCC export validation failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected DCC export validation error: {e}")
             return False
 
     def get_combined_mesh_path(self) -> Optional[str]:

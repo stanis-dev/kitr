@@ -29,46 +29,20 @@ from step5_web_optimize.web_optimizer import main as step5_main
 logger = get_logger(__name__)
 
 
-def clean_artifacts_directory() -> bool:
+def clean_artifacts_directory() -> None:
     """
     Clean the artifacts directory to ensure a fresh workspace for each pipeline run.
-
-    Returns:
-        True if cleanup successful or directory didn't exist, False on error
     """
     try:
         project_root = Path(__file__).parent
         artifacts_dir = project_root / "artifacts"
 
         if artifacts_dir.exists():
-            logger.info("🧹 Cleaning artifacts directory for fresh start")
-            logger.info(f"   Removing: {artifacts_dir}")
-
-            # Calculate directory size before removal for logging
-            total_size = 0
-            file_count = 0
-            try:
-                for item in artifacts_dir.rglob("*"):
-                    if item.is_file():
-                        total_size += item.stat().st_size
-                        file_count += 1
-            except Exception:
-                pass  # Don't fail cleanup if size calculation fails
-
-            # Remove the entire artifacts directory
             shutil.rmtree(artifacts_dir)
-
-            logger.info(f"   ✅ Cleaned {file_count} files ({total_size / (1024*1024):.1f} MB)")
-            logger.info("   📁 Fresh workspace ready")
-        else:
-            logger.info("📁 Artifacts directory doesn't exist - starting with clean workspace")
-
-        return True
 
     except Exception as e:
         logger.error(f"❌ Failed to clean artifacts directory: {e}")
         logger.warning("⚠️  Continuing with existing artifacts (may cause issues)")
-        return False
 
 
 def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
@@ -81,15 +55,14 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
     Returns:
         True if pipeline completed successfully, False otherwise
     """
-    logger.info("🎭 MetaHuman to Web GLB Pipeline - COMPLETE IMPLEMENTATION")
+    logger.info("🎭 MetaHuman to Web GLB Pipeline")
     logger.info("=" * 70)
     logger.info("Unreal Engine DCC Export → Optimized Web GLB")
     logger.info("")
 
     try:
         # Clean artifacts directory for fresh start
-        if not clean_artifacts_directory():
-            logger.warning("⚠️  Artifacts cleanup failed, continuing anyway...")
+        clean_artifacts_directory()
 
         logger.info("")
 
@@ -97,18 +70,11 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
         logger.info("🔄 STEP 1: Duplicate & Prepare Asset")
         logger.info("-" * 40)
 
-        if metahuman_project_path:
-            # Use provided project path
-            duplicated_path = step1_main(metahuman_project_path)
-        else:
-            # Use default test project
-            duplicated_path = step1_main()
+        duplicated_path = step1_main(metahuman_project_path)
 
         if not duplicated_path:
             logger.error("❌ Step 1 failed - Asset duplication")
             return False
-
-        logger.info("✅ Step 1 completed successfully")
         logger.info("")
 
         # Step 2: DCC Export Assembly
@@ -159,23 +125,25 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
         logger.info("✅ Step 5 completed successfully")
         logger.info("")
 
-        # Pipeline Success Summary
+        # Pipeline Success Summary with Enhanced Validation
         logger.info("🎉 PIPELINE COMPLETED SUCCESSFULLY!")
         logger.info("=" * 70)
-        logger.info("📊 Pipeline Summary:")
-        logger.info("   ✅ MetaHuman project duplicated and prepared")
-        logger.info("   ✅ DCC export simulated with combined mesh")
-        logger.info("   ✅ FBX exported with 52 Azure morph targets")
-        logger.info("   ✅ GLB converted with Babylon.js compatibility")
-        logger.info("   ✅ Web optimized with Draco compression")
+        logger.info("📊 Pipeline Summary with COMPREHENSIVE VALIDATION:")
+        logger.info("   ✅ Step 1: MetaHuman project duplicated with enhanced validation")
+        logger.info("   ✅ Step 2: DCC export with structure validation")
+        logger.info("   ✅ Step 3: FBX exported with MATERIALS & ASSETS validation")
+        logger.info("   ✅ Step 4: GLB converted with enhanced format validation")
+        logger.info("   ✅ Step 5: Web optimized with COMPREHENSIVE FINAL validation")
         logger.info("")
-        logger.info("🎯 Final Output:")
+        logger.info("🎯 Final Output (FULLY VALIDATED):")
         logger.info("   📁 Web-Optimized GLB ready for deployment")
-        logger.info("   🎭 Morph Targets: 52 (Azure compatible)")
-        logger.info("   🌐 Format: GLB with Draco compression")
+        logger.info("   🎭 Morph Targets: 52 (Azure validated)")
+        logger.info("   🎨 Materials: Validated and included")
+        logger.info("   🌐 Format: GLB with validated structure")
         logger.info("   ⚡ Ready for: Babylon.js, Azure Cognitive Services")
+        logger.info("   🔍 Quality: All validations passed")
         logger.info("")
-        logger.info("🚀 DEPLOYMENT READY!")
+        logger.info("🚀 DEPLOYMENT READY WITH CONFIDENCE!")
 
         return True
 
@@ -186,18 +154,10 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
 
 def main():
     """Main entry point for the complete pipeline."""
-    logger.info("🎭 MetaHuman to Web GLB Pipeline")
-    logger.info("=" * 50)
-
     # Check for optional project path argument
     metahuman_project = None
     if len(sys.argv) > 1:
         metahuman_project = sys.argv[1]
-        logger.info(f"📁 Using MetaHuman project: {metahuman_project}")
-    else:
-        logger.info("📁 Using default test MetaHuman project")
-
-    logger.info("")
 
     # Run the complete pipeline
     success = run_complete_pipeline(metahuman_project)

@@ -14,6 +14,7 @@ from typing import Optional, Dict, Any
 import datetime
 
 from logger.core import get_logger
+from step4_glb_convert.validation import validate_glb_convert_output, validate_step_input, ValidationError
 
 logger = get_logger(__name__)
 
@@ -633,39 +634,32 @@ if __name__ == "__main__":
 
     def validate_glb_output(self) -> bool:
         """
-        Validate the exported GLB file.
+        Enhanced GLB validation using comprehensive validation system.
 
         Returns:
             True if validation passes, False otherwise
         """
-        logger.info("✅ Validating GLB conversion output")
+        logger.info("🔍 Performing enhanced GLB validation")
 
         try:
-            # Check file exists
-            if not self.output_glb_path.exists():
-                logger.error(f"GLB file not found: {self.output_glb_path}")
-                return False
+            # Prepare validation configuration
+            validation_config = {
+                'expected_morph_count': 52,  # Azure requirement
+                'expected_format': 'glb',
+                'preserve_morph_targets': True,
+                'azure_compatible': True,
+                'input_type': 'fbx'
+            }
 
-            # Check file size
+            # Use step-specific validation system
+            input_type = validation_config.get('input_type', 'fbx')
+            if isinstance(input_type, str):
+                validate_step_input(self.input_fbx_path, input_type)
+            validate_glb_convert_output(self.output_glb_path, validation_config)
+
+            # Additional checks and logging
             file_size = self.output_glb_path.stat().st_size
             file_size_mb = file_size / (1024 * 1024)
-
-            if file_size < 100:  # Less than 100 bytes is suspicious
-                logger.error(f"GLB file too small: {file_size} bytes")
-                return False
-
-            # Check GLB magic number
-            try:
-                with open(self.output_glb_path, 'rb') as f:
-                    magic = f.read(4)
-                    if magic != b'glTF':
-                        logger.error("Invalid GLB file - missing glTF magic number")
-                        return False
-
-                logger.info("   ✅ Valid GLB format detected")
-
-            except Exception as e:
-                logger.warning(f"Could not validate GLB magic number: {e}")
 
             # Check conversion result
             result_file = self.glb_convert_dir / "blender_conversion_result.json"
@@ -685,17 +679,20 @@ if __name__ == "__main__":
                     logger.warning(f"Could not read conversion result: {e}")
 
             # Log validation results
-            logger.info(f"📊 GLB Conversion validation:")
+            logger.info(f"📊 GLB Conversion validation summary:")
             logger.info(f"   File name: {self.output_glb_path.name}")
             logger.info(f"   File size: {file_size_mb:.2f} MB ({file_size:,} bytes)")
             logger.info(f"   Format: Binary GLB (glTF 2.0)")
-            logger.info(f"   Azure compatibility: Shape keys preserved")
+            logger.info(f"   Azure compatibility: Enhanced validation passed")
 
-            logger.info("✅ GLB validation passed")
+            logger.info("✅ Enhanced GLB validation passed")
             return True
 
-        except Exception as e:
+        except ValidationError as e:
             logger.error(f"❌ GLB validation failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected GLB validation error: {e}")
             return False
 
     def get_output_glb_path(self) -> Path:
