@@ -9,16 +9,16 @@ This pipeline processes MetaHuman assets entirely within Unreal Engine, then exp
 
 ## 5-Step Architecture
 
-### Step 1: Duplicate & Prepare Asset (`step1_duplicate/`)
-**Purpose:** Asset duplication and morph baking preparation
-- Duplicate MetaHuman Character asset to temporary package
+### Step 1: Ingest & Prepare Asset (`step1_ingest/`)
+**Purpose:** Asset ingestion and morph baking preparation
+- Ingest MetaHuman Character asset to temporary package
 - Preserve original asset integrity (never modify source)
 - Prepare temp asset for baking operations
 - Reduce to 52 Azure-compatible morph targets
 
 **Input:** Original MetaHuman Character asset
-**Output:** Temporary duplicate with 52 morphs
-**Entry Point:** `step1_duplicate/asset_duplicator.py`
+**Output:** Temporary working copy with 52 morphs
+**Entry Point:** `step1_ingest/ingestor.py`
 
 ### Step 2: DCC Export Assembly (`step2_dcc_export/`)
 **Purpose:** Run Epic's DCC Export pipeline
@@ -76,7 +76,7 @@ This pipeline processes MetaHuman assets entirely within Unreal Engine, then exp
 
 ```
 Original MetaHuman Asset
-    ↓ (step1_duplicate)
+    ↓ (step1_ingest)
 Temp Asset (52 morphs)
     ↓ (step2_dcc_export)
 Combined Skeletal Mesh + DCC Export
@@ -99,7 +99,7 @@ Web-optimized GLB (final)
 - [x] **Original pipeline archived** - Complete backup in `archive_old_pipeline/`
 
 ### Implementation Ready 🚧
-- [ ] **Step 1: Asset duplication logic** - Unreal Engine Python API integration
+- [ ] **Step 1: Asset ingestion logic** - Unreal Engine Python API integration
 - [ ] **Step 2: DCC Export integration** - MetaHumanCharacter.RunAssembly automation
 - [ ] **Step 3: FBX export automation** - Unreal Engine commandlet integration
 - [ ] **Step 4: Blender conversion pipeline** - Headless FBX→GLB automation
@@ -123,7 +123,7 @@ python pipeline.py
 ### Individual Step Testing
 ```bash
 # Test specific steps during development
-python step1_duplicate/asset_duplicator.py
+python step1_ingest/ingestor.py
 python step2_dcc_export/dcc_assembler.py
 python step3_fbx_export/fbx_exporter.py
 python step4_glb_convert/blender_converter.py

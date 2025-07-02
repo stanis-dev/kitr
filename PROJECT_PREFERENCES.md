@@ -18,7 +18,7 @@ The new architecture leverages **Epic's DCC Export pipeline** within Unreal Engi
 
 ## 5-Step Architecture (NEW)
 
-### Step 1: Duplicate & Prepare Asset (`step1_duplicate/`)
+### Step 1: Ingest & Prepare Asset (`step1_ingest/`)
 **Purpose:** MetaHuman asset duplication and morph target preparation
 - **Input:** Original MetaHuman Character asset in Unreal Engine
 - **Process:** Duplicate asset to temporary package, prepare 52 Azure-compatible morphs
@@ -88,7 +88,7 @@ The new architecture leverages **Epic's DCC Export pipeline** within Unreal Engi
 
 ```
 Original MetaHuman Asset (Unreal Engine)
-    ↓ (step1_duplicate)
+    ↓ (step1_ingest)
 Temp_MetaHuman_Processing/BP_Character
     ↓ (step2_dcc_export)
 Combined Skeletal Mesh + DCC Export Folder
@@ -103,7 +103,7 @@ output/step5_web_optimize/character_optimized.glb (FINAL)
 ### Output Directory Structure
 ```
 output/
-├── step1_duplicate/           # Temporary assets (Unreal Engine)
+├── step1_ingest/              # Temporary assets (Unreal Engine)
 ├── step2_dcc_export/          # DCC Export outputs
 ├── step3_fbx_export/          # Deterministic FBX files
 ├── step4_glb_convert/         # Converted GLB files
@@ -188,7 +188,7 @@ kitr/
 │   ├── __init__.py
 │   └── core.py
 │
-├── step1_duplicate/                   # 🔄 Asset duplication
+├── step1_ingest/                      # 🔄 Asset ingestion
 │   ├── __init__.py
 │   └── asset_duplicator.py
 │
@@ -274,7 +274,7 @@ python pipeline.py
 ### Development Workflow
 ```bash
 # Individual step testing
-python step1_duplicate/asset_duplicator.py
+python step1_ingest/ingestor.py
 python step2_dcc_export/dcc_assembler.py
 # ... etc
 

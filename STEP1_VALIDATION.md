@@ -36,30 +36,29 @@ Step 1 validates these plugins exist in the UE installation:
 ### Files Structure
 
 ```
-step1_duplicate/
-├── asset_duplicator.py      # Main entry point
-├── project_validator.py     # 10-step validation implementation
-├── validation_models.py     # Data structures for all sub-tasks
+step1_ingest/
+├── ingestor.py              # Main entry point and consolidated logic
+├── validation.py            # Data structures and validation functions
 └── __init__.py              # Module initialization
 ```
 
 ### Key Classes
 
-- **`ProjectValidator`** - Main validation orchestrator
+- **`AssetIngestor`** - Main ingestion orchestrator
 - **`ProjectPathInfo`** - Project location and validation state
 - **`MetaHumanHealthReport`** - Individual asset health status
-- **`Step1Checkpoint`** - Final validation results and checkpoint data
+- **`IngestCheckpoint`** - Final validation results and checkpoint data
 
 ### Data Flow
 
 ```
 User Input (.uproject path)
     ↓
-ProjectValidator.execute_validation()
+AssetIngestor.execute_ingestion()
     ↓
 10 Sequential Sub-tasks (atomic)
     ↓
-Step1Checkpoint (success/failure + data)
+IngestCheckpoint (success/failure + data)
     ↓
 Pipeline continues to Step 2
 ```
@@ -68,27 +67,27 @@ Pipeline continues to Step 2
 
 ### From Pipeline
 ```python
-from step1_duplicate.asset_duplicator import main
+from step1_ingest.ingestor import main
 
-# Execute Step 1 validation
+# Execute Step 1 ingestion
 project_path = main("/path/to/project.uproject")
 if project_path:
-    print("Step 1 validation successful")
+    print("Step 1 ingestion successful")
 else:
-    print("Step 1 validation failed")
+    print("Step 1 ingestion failed")
 ```
 
-### Direct Validation
+### Direct Ingestion
 ```python
-from step1_duplicate.project_validator import ProjectValidator
+from step1_ingest.ingestor import AssetIngestor
 
-validator = ProjectValidator()
-checkpoint = validator.execute_validation("/path/to/project.uproject")
+ingestor = AssetIngestor()
+checkpoint = ingestor.execute_ingestion("/path/to/project.uproject")
 
 if checkpoint.success:
     print(f"Ready characters: {checkpoint.healthy_characters}")
 else:
-    print(f"Validation failed: {checkpoint.error}")
+    print(f"Ingestion failed: {checkpoint.error}")
 ```
 
 ## Validation Outputs
