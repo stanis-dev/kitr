@@ -1,28 +1,21 @@
 """
-Windows-only configuration for the MetaHuman pipeline.
+MetaHuman pipeline configuration.
 
-This module contains all Windows-specific paths and settings
-for WSL2 compatibility. All paths use F: drive by default.
+This module contains all paths and settings for the MetaHuman pipeline.
 """
 
-# Unreal Engine paths
+# Unreal Engine path
 DEFAULT_UE_PATH = "F:/Games/Fortnite/UE_5.6"
 DEFAULT_UE_ENGINE_PATH = f"{DEFAULT_UE_PATH}/Engine"
 
-# Blender paths
-DEFAULT_BLENDER_PATH = "F:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
-ALTERNATIVE_BLENDER_PATHS = [
-    "F:/Program Files/Blender Foundation/Blender 3.6/blender.exe",
-    "F:/Program Files/Blender Foundation/Blender 3.5/blender.exe",
-    "F:/Program Files/Blender Foundation/Blender 3.4/blender.exe"
-]
+# Blender path
+DEFAULT_BLENDER_PATH = "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
 
-# Project paths
+# Project path
 DEFAULT_PROJECT_PATH = "F:/Users/stan/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
 
-# Artifacts and output paths
+# Artifacts and output path
 DEFAULT_ARTIFACTS_DIR = "artifacts"
-DEFAULT_OUTPUT_DIR = "output"
 
 # WSL2 path conversion helpers
 def to_wsl_path(windows_path: str) -> str:
