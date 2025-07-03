@@ -12,6 +12,7 @@ from typing import List, Optional, Any, Dict
 import datetime
 
 from logger.core import get_logger
+from logger.platform_utils import get_default_unreal_engine_path, get_default_project_path, validate_windows_path
 from step1_ingest.validation import (
     ProjectPathInfo, PluginStatus, MetaHumanHealthReport, SessionToken,
     MetaHumanAsset, IngestCheckpoint, ValidationResult, EngineVersion,
@@ -27,10 +28,17 @@ class AssetIngestor:
     Each method corresponds to one atomic sub-task with clear input/output.
     """
 
-    def __init__(self, artifacts_base_dir: str = "artifacts"):
-        """Initialize the asset ingestor."""
+    def __init__(self, artifacts_base_dir: str = "artifacts", unreal_engine_path: Optional[str] = None):
+        """
+        Initialize the asset ingestor.
+
+        Args:
+            artifacts_base_dir: Directory for artifacts
+            unreal_engine_path: Path to Unreal Engine installation (defaults to F:/Games/Fortnite/UE_5.6)
+        """
         project_root = Path(__file__).parent.parent
         self.artifacts_base = project_root / artifacts_base_dir
+        self.unreal_engine_path = unreal_engine_path or get_default_unreal_engine_path()
         self.session_token: Optional[SessionToken] = None
         self.checkpoint_data: Dict[str, Any] = {}
 
@@ -263,34 +271,23 @@ class AssetIngestor:
             )
 
     def _find_ue_installation_path(self, engine_association: str) -> Optional[Path]:
-        """Find UE installation path based on engine association"""
+        """Find UE installation path based on provided path"""
 
-        # Common UE installation paths on macOS
-        common_paths = [
-            Path("/Users/Shared/Epic Games/UE_5.6"),
-            Path("/Applications/UE_5.6"),
-            Path(f"/Users/Shared/Epic Games/UE_{engine_association}"),
-            Path(f"/Applications/UE_{engine_association}"),
-            Path("/Users/Shared/UnrealEngine/UE_5.6"),
-            Path(f"/Users/Shared/UnrealEngine/UE_{engine_association}")
-        ]
+        # Use the provided UE path
+        ue_path = Path(self.unreal_engine_path)
 
-        # Also check if it's a custom build path
-        if engine_association and not engine_association.startswith('5.'):
-            # Custom engine association - might be a path or custom build
-            custom_path = Path(engine_association)
-            if custom_path.exists() and custom_path.is_dir():
-                common_paths.insert(0, custom_path)
+        # Validate the path exists
+        if not ue_path.exists():
+            logger.warning(f"UE installation path does not exist: {ue_path}")
+            return None
 
-        # Find the first existing installation
-        for path in common_paths:
-            if path.exists() and path.is_dir():
-                # Verify it's actually a UE installation
-                engine_dir = path / "Engine"
-                if engine_dir.exists():
-                    return path
+        # Verify it's actually a UE installation
+        engine_dir = ue_path / "Engine"
+        if not engine_dir.exists():
+            logger.warning(f"UE Engine directory not found at: {engine_dir}")
+            return None
 
-        return None
+        return ue_path
 
     def open_project_headless(
         self, project_info: ProjectPathInfo
@@ -840,7 +837,7 @@ class AssetIngestor:
             return failure_checkpoint
 
 
-def main(metahuman_project_path: Optional[str] = None) -> Optional[str]:
+def main(metahuman_project_path: Optional[str] = None, unreal_engine_path: Optional[str] = None) -> Optional[str]:
     """
     Main entry point for Step 1: MetaHuman Asset Ingestion.
 
@@ -858,6 +855,7 @@ def main(metahuman_project_path: Optional[str] = None) -> Optional[str]:
 
     Args:
         metahuman_project_path: Path to .uproject file. If None, uses default test project.
+        unreal_engine_path: Path to Unreal Engine installation. If None, uses default.
 
     Returns:
         Project path if ingestion succeeds, None if it fails
@@ -867,11 +865,10 @@ def main(metahuman_project_path: Optional[str] = None) -> Optional[str]:
         project_path = metahuman_project_path
     else:
         # Use default test project path
-        default_project = "/Users/stanislav.samisko/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
-        project_path = default_project
+        project_path = get_default_project_path()
 
     # Execute ingestion (the only ingestion path)
-    ingestor = AssetIngestor()
+    ingestor = AssetIngestor(unreal_engine_path=unreal_engine_path)
 
     try:
         checkpoint = ingestor.execute_ingestion(project_path)

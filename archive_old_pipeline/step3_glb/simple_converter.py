@@ -416,10 +416,22 @@ def convert_fbx_to_glb(fbx_path: str, output_dir: str) -> bool:
 
     logger.info(f"Converting {fbx_path} to {glb_path}")
 
-    # Find Blender
-    blender_path = "/Applications/Blender.app/Contents/MacOS/Blender"
-    if not os.path.exists(blender_path):
-        logger.error("Blender not found")
+            # Find Blender - Windows only
+    blender_paths = [
+        "F:/Program Files/Blender Foundation/Blender 4.0/blender.exe",
+        "F:/Program Files/Blender Foundation/Blender 3.6/blender.exe",
+        "F:/Program Files/Blender Foundation/Blender 3.5/blender.exe",
+        "F:/Program Files/Blender Foundation/Blender 3.4/blender.exe"
+    ]
+
+    blender_path = None
+    for path in blender_paths:
+        if os.path.exists(path):
+            blender_path = path
+            break
+
+    if not blender_path:
+        logger.error("Blender not found in standard Windows locations")
         return False
 
     # Find materials directory

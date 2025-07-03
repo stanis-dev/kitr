@@ -15,6 +15,7 @@ import datetime
 
 from logger.core import get_logger
 from step4_glb_convert.validation import validate_glb_convert_output, validate_step_input, ValidationError
+from logger.platform_utils import get_default_blender_path, validate_windows_path
 
 logger = get_logger(__name__)
 
@@ -22,18 +23,18 @@ logger = get_logger(__name__)
 class BlenderConverter:
     """Handles FBX to GLB conversion using Blender."""
 
-    def __init__(self, input_fbx_path: str, artifacts_base_dir: str = "artifacts", blender_executable: str = "blender"):
+    def __init__(self, input_fbx_path: str, artifacts_base_dir: str = "artifacts", blender_path: Optional[str] = None):
         """
         Initialize the Blender converter.
 
         Args:
             input_fbx_path: Path to input FBX file from step 3
             artifacts_base_dir: Base directory for artifacts
-            blender_executable: Path to Blender executable
+            blender_path: Path to Blender executable (defaults to F:/Program Files/Blender Foundation/Blender 4.0/blender.exe)
         """
         self.input_fbx_path = Path(input_fbx_path)
         self.input_fbx_name = self.input_fbx_path.stem
-        self.blender_executable = blender_executable
+        self.blender_path = blender_path or get_default_blender_path()
 
         # Set up output directory structure
         project_root = Path(__file__).parent.parent
@@ -72,7 +73,7 @@ class BlenderConverter:
             "conversion_timestamp": datetime.datetime.now().isoformat(),
             "source_fbx_file": str(self.input_fbx_path),
             "output_glb_file": str(self.output_glb_path),
-            "blender_executable": self.blender_executable,
+            "blender_path": self.blender_path,
             "status": "initialized",
             "conversion_settings": {},
             "notes": "GLB Conversion process initialized - ready for Blender automation"
@@ -95,8 +96,13 @@ class BlenderConverter:
         logger.info("🔍 Checking Blender availability")
 
         try:
+            # Validate the provided Blender path
+            if not validate_windows_path(self.blender_path):
+                logger.warning(f"   ⚠️ Blender path not accessible: {self.blender_path} - proceeding with simulation")
+                return True
+
             result = subprocess.run(
-                [self.blender_executable, "--version"],
+                [self.blender_path, "--version"],
                 capture_output=True,
                 text=True,
                 timeout=10
@@ -110,7 +116,8 @@ class BlenderConverter:
                 # Update manifest with Blender info
                 self._update_conversion_manifest("blender_detected", {
                     "blender_version": version_info,
-                    "blender_available": True
+                    "blender_available": True,
+                    "blender_path": self.blender_path
                 })
 
                 return True

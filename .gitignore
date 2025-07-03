@@ -6,12 +6,16 @@ __pycache__/
 .Python
 *.tmp
 
-# macOS system files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
+# Windows system files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
 # Pipeline artifacts
 artifacts/
