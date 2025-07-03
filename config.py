@@ -12,7 +12,7 @@ DEFAULT_UE_ENGINE_PATH = f"{DEFAULT_UE_PATH}/Engine"
 DEFAULT_BLENDER_PATH = "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
 
 # Project path
-DEFAULT_PROJECT_PATH = "F:/Users/stan/Downloads/TestSofi/Metahumans5_6/Metahumans5_6.uproject"
+DEFAULT_PROJECT_PATH = "C:/Users/stani/Documents/Unreal Projects/MhExporter/MhExporter.uproject"
 
 # Artifacts and output path
 DEFAULT_ARTIFACTS_DIR = "artifacts"

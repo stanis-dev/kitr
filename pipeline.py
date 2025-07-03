@@ -81,7 +81,7 @@ def run_complete_pipeline(metahuman_project_path: Optional[str] = None) -> bool:
         logger.info("🔧 STEP 2: DCC Export Assembly")
         logger.info("-" * 40)
 
-        dcc_export_path = step2_main()
+        dcc_export_path = step2_main(duplicated_path)
         if not dcc_export_path:
             logger.error("❌ Step 2 failed - DCC export assembly")
             return False

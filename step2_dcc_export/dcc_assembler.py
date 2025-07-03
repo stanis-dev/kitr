@@ -422,29 +422,36 @@ class DCCAssembler:
         return self.dcc_export_folder
 
 
-def main():
+def main(project_path: Optional[str] = None):
     """Main entry point for Step 2: DCC Export Assembly."""
     logger.info("🔧 Step 2: DCC Export Assembly")
     logger.info("=" * 50)
 
-    # For development, we need to find the most recent copy from step 1
-    project_root = Path(__file__).parent.parent
-    artifacts_dir = project_root / "artifacts"
+    # Use provided project path or find the most recent copy from step 1
+    if project_path:
+        copied_project_path = Path(project_path)
+        if not copied_project_path.exists():
+            logger.error(f"❌ Project path not found: {copied_project_path}")
+            sys.exit(1)
+    else:
+        # For development, we need to find the most recent copy from step 1
+        project_root = Path(__file__).parent.parent
+        artifacts_dir = project_root / "artifacts"
 
-    # Find most recent Metahumans5_6 copy
-    if not artifacts_dir.exists():
-        logger.error("❌ Artifacts directory not found. Run step 1 first.")
-        sys.exit(1)
+        # Find most recent Metahumans5_6 copy
+        if not artifacts_dir.exists():
+            logger.error("❌ Artifacts directory not found. Run step 1 first.")
+            sys.exit(1)
 
-    # Find the most recent copy
-    copy_dirs = list(artifacts_dir.glob("Metahumans5_6_*"))
-    if not copy_dirs:
-        logger.error("❌ No copied projects found. Run step 1 first.")
-        sys.exit(1)
+        # Find the most recent copy
+        copy_dirs = list(artifacts_dir.glob("Metahumans5_6_*"))
+        if not copy_dirs:
+            logger.error("❌ No copied projects found. Run step 1 first.")
+            sys.exit(1)
 
-    # Use the most recent copy (sorted by name which includes timestamp)
-    latest_copy_dir = sorted(copy_dirs)[-1]
-    copied_project_path = latest_copy_dir / "Metahumans5_6.uproject"
+        # Use the most recent copy (sorted by name which includes timestamp)
+        latest_copy_dir = sorted(copy_dirs)[-1]
+        copied_project_path = latest_copy_dir / "Metahumans5_6.uproject"
 
     logger.info(f"📁 Using copied project: {copied_project_path}")
 

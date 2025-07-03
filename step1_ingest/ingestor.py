@@ -9,13 +9,12 @@ Consolidates all ingestion logic into a single, DRY implementation.
 import json
 from pathlib import Path
 from typing import List, Optional, Any, Dict
-import datetime
 
 from logger.core import get_logger
-from logger.platform_utils import get_default_unreal_engine_path, get_default_project_path, validate_windows_path
+from logger.platform_utils import get_default_unreal_engine_path, get_default_project_path
 from step1_ingest.validation import (
     ProjectPathInfo, PluginStatus, MetaHumanHealthReport, SessionToken,
-    MetaHumanAsset, IngestCheckpoint, ValidationResult, EngineVersion,
+    MetaHumanAsset, ValidationResult, EngineVersion,
     REQUIRED_METAHUMAN_PLUGINS
 )
 
@@ -199,10 +198,6 @@ class AssetIngestor:
                 for search_path in plugin_search_paths:
                     if not search_path.exists():
                         continue
-
-                    # Look for plugin folder or .uplugin file
-                    plugin_folder = search_path / plugin_name
-                    plugin_file = plugin_folder / f"{plugin_name}.uplugin"
 
                     # Also try common variations of the plugin name
                     alt_names = [
@@ -522,87 +517,6 @@ class AssetIngestor:
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to perform health check: {e}")
 
-    def generate_readiness_report(self, health_reports: List[MetaHumanHealthReport]) -> ValidationResult[str]:
-        """
-        Generate artist-facing readiness report.
-
-        Args:
-            health_reports: Health reports for all MetaHumans
-
-        Returns:
-            ValidationResult containing markdown report string
-        """
-        logger.info("🔍 Generating readiness report")
-
-        try:
-            # Generate markdown report
-            report_lines = [
-                "# MetaHuman Pipeline Readiness Report",
-                "",
-                f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                "",
-                "## Summary",
-                "",
-                f"- **Total MetaHumans**: {len(health_reports)}",
-                f"- **Healthy**: {sum(1 for r in health_reports if r.is_healthy())}",
-                f"- **Need Fixes**: {sum(1 for r in health_reports if not r.is_healthy())}",
-                "",
-                "## Character Status",
-                ""
-            ]
-
-            # Add detailed status for each character
-            for report in health_reports:
-                status_icon = "✅" if report.is_healthy() else "❌"
-                report_lines.append(f"### {status_icon} {report.character_name}")
-                report_lines.append("")
-
-                if report.is_healthy():
-                    report_lines.extend([
-                        "**Status**: Ready for pipeline",
-                        f"- LOD0: Present",
-                        f"- Morph Targets: {report.morph_count}",
-                        f"- Head Bones: OK",
-                        f"- Eye Bones: OK",
-                        ""
-                    ])
-                else:
-                    report_lines.extend([
-                        "**Status**: Needs fixes before pipeline",
-                        "",
-                        "**Issues to fix**:",
-                        ""
-                    ])
-
-                    for issue in report.get_issues():
-                        report_lines.append(f"- {issue}")
-
-                    report_lines.append("")
-
-            # Add pipeline recommendations
-            healthy_characters = [r.character_name for r in health_reports if r.is_healthy()]
-
-            if healthy_characters:
-                report_lines.extend([
-                    "## Pipeline Recommendations",
-                    "",
-                    "**Ready for export**:",
-                    ""
-                ])
-
-                for char in healthy_characters:
-                    report_lines.append(f"- {char}")
-
-                report_lines.append("")
-
-            report_content = "\n".join(report_lines)
-
-            logger.info("   ✅ Readiness report generated")
-            return ValidationResult.success_result(report_content)
-
-        except Exception as e:
-            return ValidationResult.failure_result(f"Failed to generate readiness report: {e}")
-
     def create_working_copy(self, healthy_reports: List[MetaHumanHealthReport]) -> ValidationResult[List[str]]:
         """
         Create temporary working copies of healthy MetaHumans.
@@ -668,83 +582,15 @@ class AssetIngestor:
         except Exception as e:
             return ValidationResult.failure_result(f"Failed to lock original assets: {e}")
 
-    def emit_checkpoint(
-        self,
-        project_info: ProjectPathInfo,
-        engine_version: EngineVersion,
-        plugins: List[PluginStatus],
-        health_reports: List[MetaHumanHealthReport],
-        temp_asset_paths: List[str],
-        readiness_report: str
-    ) -> ValidationResult[IngestCheckpoint]:
+    def execute_ingestion(self, uproj_path: str) -> bool:
         """
-        Create final Step 1 checkpoint with all validation results.
-
-        Args:
-            project_info: Project path information
-            engine_version: Validated engine version
-            plugins: Plugin status list
-            health_reports: All MetaHuman health reports
-            temp_asset_paths: List of temporary asset paths
-            readiness_report: Generated readiness report
-
-        Returns:
-            ValidationResult containing IngestCheckpoint
-        """
-        logger.info("🔍 Creating checkpoint")
-
-        try:
-            # Determine overall success
-            healthy_characters = [r.character_name for r in health_reports if r.is_healthy()]
-            success = len(healthy_characters) > 0
-
-            # Create checkpoint
-            checkpoint = IngestCheckpoint(
-                success=success,
-                project_path=str(project_info.abs_root),
-                engine_version=str(engine_version),
-                plugins=plugins,
-                metahumans=health_reports,
-                healthy_characters=healthy_characters,
-                temp_asset_paths=temp_asset_paths,
-                readiness_report=readiness_report,
-                timestamp=datetime.datetime.now().isoformat(),
-                error="" if success else "No healthy MetaHumans found for pipeline"
-            )
-
-            # Save checkpoint to artifacts
-            self.artifacts_base.mkdir(parents=True, exist_ok=True)
-            checkpoint_file = self.artifacts_base / "step1_checkpoint.json"
-
-            with open(checkpoint_file, 'w') as f:
-                f.write(checkpoint.to_json())
-
-            # Save readiness report
-            report_file = self.artifacts_base / "metahuman_readiness_report.md"
-            with open(report_file, 'w') as f:
-                f.write(readiness_report)
-
-            if success:
-                logger.info("   ✅ Step 1 checkpoint: SUCCESS")
-                logger.info(f"   🎯 Ready characters: {healthy_characters}")
-            else:
-                logger.error("   ❌ Step 1 checkpoint: FAILED")
-                logger.error(f"   🚫 Error: {checkpoint.error}")
-
-            return ValidationResult.success_result(checkpoint)
-
-        except Exception as e:
-            return ValidationResult.failure_result(f"Failed to emit checkpoint: {e}")
-
-    def execute_ingestion(self, uproj_path: str) -> IngestCheckpoint:
-        """
-        Execute all 10 tasks in sequence for Step 1 validation.
+        Execute all 8 tasks in sequence for Step 1 validation.
 
         Args:
             uproj_path: User-supplied project path
 
         Returns:
-            IngestCheckpoint with final validation results
+            True if ingestion succeeds, False if it fails
         """
         try:
             # 1.1: Locate Project
@@ -783,75 +629,52 @@ class AssetIngestor:
                 raise Exception(f"1.6 failed: {health_result.error}")
             health_reports = health_result.data
 
-            # 1.7: Artist-Facing Readiness Report
-            report_result = self.generate_readiness_report(health_reports)
-            if not report_result.success:
-                raise Exception(f"1.7 failed: {report_result.error}")
-            readiness_report = report_result.data
-
-            # 1.8: Create Working Copy (only healthy ones)
+            # 1.7: Create Working Copy (only healthy ones)
             healthy_reports = [r for r in health_reports if r.is_healthy()]
             if healthy_reports:
                 duplicate_result = self.create_working_copy(healthy_reports)
                 if not duplicate_result.success:
-                    raise Exception(f"1.8 failed: {duplicate_result.error}")
+                    raise Exception(f"1.7 failed: {duplicate_result.error}")
                 temp_asset_paths = duplicate_result.data
 
-                # 1.9: Lock Original
+                # 1.8: Lock Original
                 lock_result = self.lock_original_assets(health_reports)
                 if not lock_result.success:
-                    logger.warning(f"1.9 warning: {lock_result.error}")
+                    logger.warning(f"1.8 warning: {lock_result.error}")
             else:
                 temp_asset_paths = []
                 logger.warning("No healthy MetaHumans to create working copies or lock")
 
-            # 1.10: Emit Checkpoint
-            checkpoint_result = self.emit_checkpoint(
-                project_info, engine_version, plugins, health_reports,
-                temp_asset_paths, readiness_report
-            )
+            # Determine overall success
+            healthy_characters = [r.character_name for r in health_reports if r.is_healthy()]
+            success = len(healthy_characters) > 0
 
-            if not checkpoint_result.success:
-                raise Exception(f"1.10 failed: {checkpoint_result.error}")
+            if success:
+                logger.info("   ✅ Step 1 completed successfully")
+                logger.info(f"   🎯 Ready characters: {healthy_characters}")
+            else:
+                logger.error("   ❌ Step 1 failed: No healthy MetaHumans found")
 
-            checkpoint = checkpoint_result.data
-            return checkpoint
+            return success
 
         except Exception as e:
             logger.error(f"❌ Step 1 ingestion failed: {e}")
-
-            # Create failure checkpoint
-            failure_checkpoint = IngestCheckpoint(
-                success=False,
-                project_path=uproj_path,
-                engine_version="unknown",
-                plugins=[],
-                metahumans=[],
-                healthy_characters=[],
-                temp_asset_paths=[],
-                readiness_report="Ingestion failed",
-                error=str(e),
-                timestamp=datetime.datetime.now().isoformat()
-            )
-
-            return failure_checkpoint
+            return False
 
 
 def main(metahuman_project_path: Optional[str] = None, unreal_engine_path: Optional[str] = None) -> Optional[str]:
     """
     Main entry point for Step 1: MetaHuman Asset Ingestion.
 
-    This step performs the complete 10-step validation roadmap:
+    This step performs the complete 8-step validation roadmap:
     1.1 Locate Project
     1.2 Read Engine Version
     1.3 Check MetaHuman Plugins
     1.4 Open Project Headless
     1.5 Enumerate MetaHumans
     1.6 Quick-Health Check
-    1.7 Artist-Facing Readiness Report
-    1.8 Create Working Copy
-    1.9 Lock Original
-    1.10 Emit Checkpoint
+    1.7 Create Working Copy
+    1.8 Lock Original
 
     Args:
         metahuman_project_path: Path to .uproject file. If None, uses default test project.
@@ -871,15 +694,14 @@ def main(metahuman_project_path: Optional[str] = None, unreal_engine_path: Optio
     ingestor = AssetIngestor(unreal_engine_path=unreal_engine_path)
 
     try:
-        checkpoint = ingestor.execute_ingestion(project_path)
+        success = ingestor.execute_ingestion(project_path)
 
-        if checkpoint.success:
+        if success:
             logger.info("✅ Step 1 completed successfully")
             # Return the project path for pipeline continuation
-            return checkpoint.project_path
+            return project_path
         else:
             logger.error("❌ Step 1 ingestion failed")
-            logger.error(f"🚫 Error: {checkpoint.error}")
             return None
 
     except Exception as e:
